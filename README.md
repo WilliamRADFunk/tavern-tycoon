@@ -1,27 +1,51 @@
 # TavernTycoon
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.3.18.
+Own and operate a simulated tavern/bar.
 
-## Development server
+My desire is to use this game to make the experience as accessible as possible. My goal is that a blind person can seamlessly play without additional difficulty as long as they are already familiar with basic web accessibility technologies. Since the game will be built entirely with HTML/CSS/JS, there shouldn't be any reason normal web accessibility standards can't be applied. 
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+## Phase 1 Development:
 
-## Code scaffolding
+Basic controls and map available to buy and sell goods, make improvements like more tables/seating, and a number of random events player must navigate for better or worse.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+Initial loss condition is either to be closed by the health department, or go into debt for a period of time.
 
-## Build
+Win condition is to consistently make x dollars per cycle for y cycles.
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+:white_check_mark: Setup initial Angular project with all the necessary dependencies.
 
-## Running unit tests
+:black_square_button: Create the three main layers: Tavern layout, UI overlay, Settings/Options/Etc..
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+:black_square_button: Create top-down grid system that can be toggled (in)visible.
 
-## Running end-to-end tests
+:black_square_button: Highlight grid tiles based-on mouse hover, arrow keys, and shape of object to be placed.
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+:black_square_button: Add build options button, that opens build categories buttons (placement should be dynamic as categories may not always be available).
 
-## Further help
+:black_square_button: Clicking on build option category should open menu of buildable options with their graphics, prices, and opacity to show can(not) be purchased.
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+:black_square_button: Add UI Overlay are to display current finances, max occupancy, current occupancy, current health department score, popularity score, amount made that "day".
+
+:black_square_button: Create main menu with basic start, difficulty setting, load, other options (keyboard only, mouse only, mouse and keyboard, sound, etc.).
+
+:black_square_button: Add a "research" button. Player can spend experience points on new products to purchase and sell, tables that allow for more seating, entertainment bonuses like trivia nights, etc..
+
+## Phase 2 Development:
+
+Add a competitor. Basic AI tavern/bar located nearby or nextdoor.
+
+Proximity will depend on a difficulty level set by player.
+
+Added lose condition. If competitor's popularity score reaches 100%, you've lost. The inverse is true for a win condition.
+
+Added random events added that both player and AI will have to navigate.
+
+:black_square_button: Add ...
+
+## Phase 3 Development:
+
+At a certain level of development, player can evolve the tavern through the ages. As the concept of taverns have evolved over the century into modern bars, the player can start in ancient times and progress through the various epochs.
+
+At each epoch, there will be a new AI competitor that must be defeated. They will begin with a certain level of resources that is higher for each epoch, and no less than comparable to what player has when they start the epoch.
+
+:black_square_button: Add ...
