@@ -30,6 +30,12 @@ Win condition is to consistently make x dollars per cycle for y cycles.
 
 :black_square_button: Add a "research" button. Player can spend experience points on new products to purchase and sell, tables that allow for more seating, entertainment bonuses like trivia nights, etc..
 
+:black_square_button: In research and renovation there should be "paths" like the difference between bar and pub, tavern and innkeeper, etc..
+
+:black_square_button: Add UI display for the little people when selected. If patron, it would show available cash, disposition, and possibly their drink preferences. If employee, it will show their basic stats, fatigue, amount they get paid, and morale.
+
+:black_square_button: Add
+
 ## Phase 2 Development:
 
 Add a competitor. Basic AI tavern/bar located nearby or nextdoor.
