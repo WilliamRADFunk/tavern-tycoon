@@ -120,6 +120,12 @@
           }
         }
       }
-    }},
-  "defaultProject": "tavern-tycoon"
+    }
+  },
+  "defaultProject": "tavern-tycoon",
+  "schematics": {
+    "@schematics/angular:component": {
+      "styleext": "scss"
+    }
+  }
 }

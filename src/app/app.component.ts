@@ -6,5 +6,6 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'tavern-tycoon';
+  public devMode = true;
+  public title = 'tavern-tycoon';
 }

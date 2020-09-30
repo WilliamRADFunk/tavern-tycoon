@@ -90,7 +90,7 @@ Added lose condition. If competitor's popularity score reaches 100%, you've lost
 
 Added random events added that both player and AI will have to navigate.
 
-:black_square_button: Add ...
+:black_square_button: TBD
 
 ## Phase 3 Development:
 
@@ -98,4 +98,4 @@ At a certain level of development, player can evolve the tavern through the ages
 
 At each epoch, there will be a new AI competitor that must be defeated. They will begin with a certain level of resources that is higher for each epoch, and no less than comparable to what player has when they start the epoch.
 
-:black_square_button: Add ...
+:black_square_button: TBD
