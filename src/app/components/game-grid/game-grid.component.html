@@ -1,5 +1,7 @@
-<div class="w-100 h-100">
-    <div class="row ">
-
+<div class="bg-transparent">
+    <div *ngFor="let row of rowset; let iRow = index" class="row-grid d-block" [ngStyle]="{ 'min-width': (columns * 64) + 'px' }">
+        <div *ngFor="let cols of colset; let iCol = index" class="col-grid d-inline-block" style="position: relative;">
+            {{iRow}}, {{iCol}}
+        </div>
     </div>
 </div>

@@ -9,3 +9,7 @@ $fa-font-path: '~font-awesome/fonts';
 @import '~styles/google-open-sans.css';
 
 @import '~bootstrap/scss/bootstrap.scss';
+
+.bg-transparent {
+    background-color: transparent;
+}

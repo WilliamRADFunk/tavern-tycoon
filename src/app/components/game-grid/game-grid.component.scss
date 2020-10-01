@@ -1,0 +1,18 @@
+.col-grid {
+    border-left: 1px solid black;
+    box-sizing: border-box;
+    height: 64px;
+    max-height: 64px;
+    max-width: 64px;
+    min-height: 64px;
+    min-width: 64px;
+    width: 64px;
+}
+
+.row-grid {
+    border-top: 1px solid black;
+    box-sizing: border-box;
+    height: 64px;
+    max-height: 64px;
+    min-height: 64px;
+}
