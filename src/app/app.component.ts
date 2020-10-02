@@ -12,6 +12,8 @@ export class AppComponent {
   public devMode = true;
   public columns = 100;
   public rows = 100;
+  public sLeft = 0;
+  public sTop = 0;
   public title = 'tavern-tycoon';
 
   constructor() {}
@@ -28,15 +30,13 @@ export class AppComponent {
       ele.style.userSelect = 'none';
 
       this._pos = {
-          // The current scroll 
-          left: ele.scrollLeft,
-          top: ele.scrollTop,
+          // The current scroll
+          left: this.sLeft,
+          top: this.sTop,
           // Get the current mouse position
           x: e.clientX,
           y: e.clientY,
       };
-
-      console.log('mouseDownHandler', ele.scrollTop, ele.scrollLeft, this._pos);
 
       this._isScrolling = true;
 
@@ -47,21 +47,13 @@ export class AppComponent {
 
   public mouseMoveHandler(e): void {
     if (this._isScrolling) {
-      const ele = document.getElementById('main-container');
       // How far the mouse has been moved
       const dx = e.clientX - this._pos.x;
       const dy = e.clientY - this._pos.y;
 
-      console.log('mouseMoveHandler: before', e.clientX, e.clientY, ele.scrollLeft, ele.scrollTop, dx, dy, this._pos.x, this._pos.y);
-
       // Scroll the element
-      ele.scrollTop = Math.ceil(this._pos.top - dy);
-      ele.scrollLeft = this._pos.left - dx;
-
-      this._pos.left = ele.scrollLeft;
-      this._pos.top = ele.scrollTop;
-
-      console.log('mouseMoveHandler: after', e.clientX, e.clientY, ele.scrollLeft, ele.scrollTop, dx, dy, this._pos.x, this._pos.y);
+      this.sTop = this._pos.top - dy;
+      this.sLeft = this._pos.left - dx;
     }
   }
 
