@@ -52,11 +52,16 @@ export class AppComponent {
       const dx = e.clientX - this._pos.x;
       const dy = e.clientY - this._pos.y;
 
+      console.log('mouseMoveHandler: before', e.clientX, e.clientY, ele.scrollLeft, ele.scrollTop, dx, dy, this._pos.x, this._pos.y);
+
       // Scroll the element
-      ele.scrollTop = this._pos.top - dy;
+      ele.scrollTop = Math.ceil(this._pos.top - dy);
       ele.scrollLeft = this._pos.left - dx;
 
-      console.log('mouseMoveHandler', ele.scrollTop, ele.scrollLeft, dx, dy, this._pos.x, this._pos.y);
+      this._pos.left = ele.scrollLeft;
+      this._pos.top = ele.scrollTop;
+
+      console.log('mouseMoveHandler: after', e.clientX, e.clientY, ele.scrollLeft, ele.scrollTop, dx, dy, this._pos.x, this._pos.y);
     }
   }
 
