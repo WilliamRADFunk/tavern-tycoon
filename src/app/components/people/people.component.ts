@@ -1,4 +1,5 @@
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { GridManagerService } from 'src/app/services/grid-manager.service';
 
 @Component({
   selector: 'tt-people',
@@ -9,9 +10,9 @@ export class PeopleComponent implements OnInit {
   @Input() columns: number;
   @Input() rows: number;
 
-  @ViewChild('canvas', { static: true }) 
+  @ViewChild('canvas', { static: true })
   private _canvas: ElementRef<HTMLCanvasElement>;
-  @ViewChild('p1', { static: true }) 
+  @ViewChild('p1', { static: true })
   private _people1: ElementRef<HTMLImageElement>;
 
   private _animationId: number;
@@ -21,7 +22,7 @@ export class PeopleComponent implements OnInit {
 
   public canvasSize: [number, number] = [64, 64];
 
-  constructor() {}
+  constructor(private readonly gridManagerService: GridManagerService) {}
 
   ngOnDestroy() {
     cancelAnimationFrame(this._animationId);
