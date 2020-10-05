@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { GridManagerService } from './services/grid-manager.service';
 
 @Component({
   selector: 'app-root',
@@ -16,10 +17,11 @@ export class AppComponent {
   public sTop = 0;
   public title = 'tavern-tycoon';
 
-  constructor() {}
+  constructor(private readonly _gridManagerService: GridManagerService) {}
 
   ngOnInit() {
     document.addEventListener('mousedown', this.mouseDownHandler.bind(this));
+    this._gridManagerService.initGrid(this.rows, this.columns);
   }
 
   public mouseDownHandler(e) {
