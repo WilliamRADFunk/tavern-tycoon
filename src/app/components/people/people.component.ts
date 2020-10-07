@@ -14,6 +14,14 @@ const RAD_315_DEG_LEFT = RAD_270_DEG_LEFT + RAD_45_DEG_LEFT;
 
 const PERSON_ACTUAL_SIZE = 48;
 const PERSON_IMG_SIZE = 64;
+const walkingSpeed = 0.003;
+
+const getXPos = function(col: number): number {
+  return col * 64;
+};
+const getYPos = function(row: number): number {
+  return row * 64;
+};
 
 enum PersonDirection {
   'Down' = 0,
@@ -72,6 +80,11 @@ interface Person {
   position: [number, number];
 
   /**
+   * 
+   */
+  screenPosition: [number, number];
+
+  /**
    * Value to place on tile's level layer when person is occupying it.
    */
   tileValue: number;
@@ -93,8 +106,6 @@ export class PeopleComponent implements OnInit {
 
   private _animationId: number;
   private _ctx: CanvasRenderingContext2D;
-  private _frameCounter: number = 0;
-  private _people1Frame: number = 0;
 
   private _people: Person[] = [
     {
@@ -102,9 +113,11 @@ export class PeopleComponent implements OnInit {
       animationImageLocations: [[0, 0], [64, 0], [128, 0]],
       currDirection: PersonDirection.Down,
       currRotation: 0,
+      isMoving: false,
       path: [],
       name: 'Bingo Bango',
-      position: null,
+      position: [0, 0],
+      screenPosition: [8, 8],
       tileValue: null
     }
   ]
@@ -122,6 +135,8 @@ export class PeopleComponent implements OnInit {
     this.canvasSize[0] = this.columns * 64;
     this.canvasSize[1] = this.rows * 64;
     this._ctx = this._canvas.nativeElement.getContext('2d');
+    this._people[0].path = this._getShortestPath(0, 0, 0, 10);
+    this._people[0].isMoving = true;
     this._people1.nativeElement.onload = this._animationCycle.bind(this);
   }
 
@@ -131,7 +146,7 @@ export class PeopleComponent implements OnInit {
     * @param verticalDifference difference in column coordinates between person's current tile and the next.
     * @returns the new direction the person should be facing.
     */
-  private calculatePersonsNewDirection(horizontalDifference: number, verticalDifference: number): PersonDirection {
+  private _calculatePersonsNewDirection(horizontalDifference: number, verticalDifference: number): PersonDirection {
     // vertical difference * 10 + horrizontal difference = unique number for each of 8 possible directions without all the if-elses.
     const dirCode = (verticalDifference * 10) + horizontalDifference;
     switch(dirCode) {
@@ -165,7 +180,7 @@ export class PeopleComponent implements OnInit {
     }
   }
 
-  private rotatePerson(person: Person): void {
+  private _rotatePerson(person: Person): void {
     const currRot = person.currRotation;
     let rotApplied = -person.currRotation;
     switch(person.currDirection) {
@@ -208,6 +223,45 @@ export class PeopleComponent implements OnInit {
   }
 
   private _animationCycle() {
+    this._people
+      .filter(person => person.isMoving)
+      .forEach((person, index) => {
+          // Person has arrived at next cell in its path. Update position and shed last tile in path.
+          if (this._hasPersonArrivedAtCell(person)) {
+              this._updateCrewInGrid(person.path[0][0], person.path[0][1], -1);
+              person.path.shift();
+              person.position = person.path[0].slice() as [number, number];
+              this._updateCrewInGrid(person.path[0][0], person.path[0][1], person);
+              const xPos = getXPos(person.position[1]);
+              const zPos = getYPos(person.position[0]);
+              this._teleportPerson(person, xPos, zPos);
+          // Still in between tiles, move a little closer to next tile.
+          } else {
+              const nextMove = this._calculatePersonNextMove(person);
+              this._movePerson(person, nextMove[0], nextMove[1]);
+              return;
+          }
+
+          if (!person.path.length) {
+              console.error('This never should have happened!!!', person);
+          }
+
+          // Person has arrived at the intended destination. Stop moving.
+          if (person.path.length === 1) {
+              person.position = person.path.shift();
+              person.path.shift();
+              person.isMoving = false;
+              
+              return;
+          }
+
+          // Player has a new tile to head towards. Calculate direction to face.
+          const vertDir = person.path[1][0] - person.position[0];
+          const horrDir = person.path[1][1] - person.position[1];
+
+          person.currDirection = this._calculatePersonsNewDirection(horrDir, vertDir);
+          this._rotatePerson(person);
+      });
     const movingPeople = this._people.filter(person => person.isMoving);
         
     movingPeople.forEach(person => {
@@ -230,13 +284,13 @@ export class PeopleComponent implements OnInit {
     } else {
       imageLocation = imageLocations[1];
     }
-    this._ctx.clearRect(8, 8, PERSON_ACTUAL_SIZE, PERSON_ACTUAL_SIZE);
+    this._ctx.clearRect(person.screenPosition[0], person.screenPosition[1], PERSON_ACTUAL_SIZE, PERSON_ACTUAL_SIZE);
     this._ctx.drawImage(
       this._people1.nativeElement,
       imageLocation[0],
       imageLocation[1],
       PERSON_IMG_SIZE,
-      PERSON_IMG_SIZE, 8, 8, PERSON_ACTUAL_SIZE, PERSON_ACTUAL_SIZE);
+      PERSON_IMG_SIZE, person.screenPosition[0], person.screenPosition[1], PERSON_ACTUAL_SIZE, PERSON_ACTUAL_SIZE);
 
     person.animationCounter++;
 
@@ -262,6 +316,43 @@ export class PeopleComponent implements OnInit {
   }
 
   /**
+   * Calculates the next frame amount of movement the crew person must travel.
+   * @param person who's next move is being calculated.
+   * @returns the x,z coordinate amounts to move in those directions.
+   */
+  private _calculatePersonNextMove(person: Person): [number, number] {
+    switch(person.currDirection) {
+        case PersonDirection.Down: {
+            return [0, walkingSpeed];
+        }
+        case PersonDirection.Down_Left: {
+            return [-walkingSpeed, walkingSpeed];
+        }
+        case PersonDirection.Down_Right: {
+            return [walkingSpeed, walkingSpeed];
+        }
+        case PersonDirection.Left: {
+            return [-walkingSpeed, 0];
+        }
+        case PersonDirection.Right: {
+            return [walkingSpeed, 0];
+        }
+        case PersonDirection.Up: {
+            return [0, -walkingSpeed];
+        }
+        case PersonDirection.Up_Left: {
+            return [-walkingSpeed, -walkingSpeed];
+        }
+        case PersonDirection.Up_Right: {
+            return [walkingSpeed, -walkingSpeed];
+        }
+        default: {
+            console.error('_calculatePersonNextMove: Impossible direction', person, person.currDirection);
+        }
+    }
+  }
+
+  /**
    * Checks if the cell is already in the tested path. If it is then the new cell would make a cycle.
    * @param testPath path up to, but not including, the tested cell
    * @param testedCell the cell to use to test the path for a cycle
@@ -276,7 +367,7 @@ export class PeopleComponent implements OnInit {
    * @param row coordinate of the tile
    * @param col coordinate of the tile
    * @param testPath path up to, but not including, the tested cell
-   * @param startCell tile the crew member is starting from
+   * @param startCell tile the person is starting from
    * @returns TRUE means there was a shorter path to current tile if in straightish line | FALSE means the straightish path was longer or blocked
    */
   private _checkShorterLinearPath(row: number, col: number, testPath: number[], startCell: number): boolean {
@@ -344,7 +435,7 @@ export class PeopleComponent implements OnInit {
    * @param row coordinate of the tile
    * @param col coordinate of the tile
    * @param testPath used to push and pop values depending on the success of the path
-   * @param targetCell reference number fot the cell crew member is trying to reach
+   * @param targetCell reference number fot the cell person is trying to reach
    * @returns true if this cell is target cell, false if path is blocked, out of bounds, too long, cyclical, or meandering
    */
   private _getShortestPathRec(nextRow: number, nextCol: number, targetRow: number, targetCol: number, testPath: number[], targetCell: number): boolean {
@@ -439,7 +530,7 @@ export class PeopleComponent implements OnInit {
     const startCell = this._convertRowColToCell(row1, col1);
     const targetCell = this._convertRowColToCell(row2, col2);
 
-    // Crew member is already in that cell. Bail out early.
+    // Person is already in that cell. Bail out early.
     if (startCell === targetCell) {
         return [];
     }
@@ -481,6 +572,73 @@ export class PeopleComponent implements OnInit {
 
     // Having reached this point, there was no viable path to target cell.
     return [];
+  }
+
+  /**
+   * Checks to see if person is close enough to center of next tile to consider it arrived.
+   * @param person person who's position is checked against next tile in its path.
+   * @returns whether or not person has arrived at next tile. TRUE has arrived | FALSE has not arrived.
+   */
+  private _hasPersonArrivedAtCell(person: Person): boolean {
+    const currPos = person.position;
+    const tileCoords = person.path[1];
+
+    const yDist = getYPos(tileCoords[0]) - currPos[1];
+    const xDist = getXPos(tileCoords[1]) - currPos[0];
+
+    const dist = Math.sqrt((yDist * yDist) + (xDist * xDist));
+
+    if (dist <= walkingSpeed + 0.001) {
+        return true;
+    }
+    return false;
+  }
+
+  /**
+   * 
+   * @param person selected individual person of the team to move.
+   * @param x amount to move crew person along the x-axis.
+   * @param y amount to move crew person along the y-axis.
+   */
+  private _movePerson(person: Person, x: number, y: number): void {
+    person.screenPosition[0] += x;
+    person.screenPosition[1] += y;
+  }
+
+  /**
+   * Teleports person to provided x and y coord. Differs from movePerson because this isn't incremental.
+   * @param person selected individual person of the team to move.
+   * @param x coordinate to move person on the x-axis.
+   * @param y coordinate to move person on the y-axis.
+   */
+  private _teleportPerson(person: Person, x: number, y: number): void {
+    person.screenPosition[0] = x;
+    person.screenPosition[0] = y;
+  }
+
+  /**
+   * Updates a grid tile with crew value.
+   * @param row row coordinate in the terrain grid
+   * @param col col coordinate in the terrain grid
+   * @param person person index or person reference with which to update the grid tile value.
+   * @returns the value of the tile after changed with person.
+   */
+  private _updateCrewInGrid(row: number, col: number, person: number | Person): number {
+    // If -1 then the person has left the tile, and it needs to be reset.
+    // if (person === -1 && this.gridManagerService.isInBounds(row, col)) {
+    //     this._grid[row][col][2] = 0;
+    //     return 0;
+    // }
+
+    // const tileVal: number = (typeof person !== 'number') ? person.tileValue : this._ancientRuinsSpec.crew[person].tileValue;
+    // if (this.gridManagerService.isInBounds(row, col) && (!this.gridManagerService.isBlocking(this._grid[row][col][2]) || this._grid[row][col][2] < this._tileCtrl.getLandingZoneValue())) {
+    //     this._grid[row][col][2] = tileVal;
+
+    //     return tileVal;
+    // }
+
+    // Row/Col not in range or blocked.
+    return 0;
   }
 
 }
