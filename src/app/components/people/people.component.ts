@@ -4,23 +4,24 @@ import { GridManagerService } from 'src/app/services/grid-manager.service';
 const adjacencyMods: [number, number][] = [ [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1] ];
 let pathFindMemo: { [key: number]: number } = {};
 
-const RAD_90_DEG_LEFT = -1.5708;
-const RAD_45_DEG_LEFT = RAD_90_DEG_LEFT / 2;
-const RAD_180_DEG_LEFT = RAD_90_DEG_LEFT * 2;
-const RAD_135_DEG_LEFT = RAD_90_DEG_LEFT + RAD_45_DEG_LEFT;
-const RAD_225_DEG_LEFT = RAD_180_DEG_LEFT + RAD_45_DEG_LEFT;
-const RAD_270_DEG_LEFT = RAD_180_DEG_LEFT + RAD_90_DEG_LEFT;
-const RAD_315_DEG_LEFT = RAD_270_DEG_LEFT + RAD_45_DEG_LEFT;
+const RAD_90_DEG_LEFT = 90;
+const RAD_45_DEG_LEFT = 45;
+const RAD_180_DEG_LEFT = 180;
+const RAD_135_DEG_LEFT = 135;
+const RAD_225_DEG_LEFT = 225;
+const RAD_270_DEG_LEFT = 270;
+const RAD_315_DEG_LEFT = 315;
 
 const PERSON_ACTUAL_SIZE = 48;
 const PERSON_IMG_SIZE = 64;
-const walkingSpeed = 0.003;
+const PERSON_OFFSET = 8;
+const walkingSpeed = 0.2;
 
 const getXPos = function(col: number): number {
-  return col * 64;
+  return (col * 64);
 };
 const getYPos = function(row: number): number {
-  return row * 64;
+  return (row * 64);
 };
 
 enum PersonDirection {
@@ -32,6 +33,10 @@ enum PersonDirection {
   'Up_Right' = 5,
   'Right' = 6,
   'Down_Right' = 7,
+}
+
+enum PersonState {
+  'Wandering' = 0
 }
 
 /**
@@ -52,6 +57,11 @@ interface Person {
    * Current direction person should be facing.
    */
   currDirection: PersonDirection;
+
+  /**
+   * Current tile person is in.
+   */
+  currTile: [number, number];
 
   /**
    * Current rotation applied to person.
@@ -80,9 +90,9 @@ interface Person {
   position: [number, number];
 
   /**
-   * 
+   * State of the person. 
    */
-  screenPosition: [number, number];
+  state: PersonState;
 
   /**
    * Value to place on tile's level layer when person is occupying it.
@@ -112,12 +122,13 @@ export class PeopleComponent implements OnInit {
       animationCounter: 0,
       animationImageLocations: [[0, 0], [64, 0], [128, 0]],
       currDirection: PersonDirection.Down,
+      currTile: [0, 0],
       currRotation: 0,
       isMoving: false,
       path: [],
       name: 'Bingo Bango',
       position: [0, 0],
-      screenPosition: [8, 8],
+      state: PersonState.Wandering,
       tileValue: null
     }
   ]
@@ -132,11 +143,17 @@ export class PeopleComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.canvasSize[0] = this.columns * 64;
-    this.canvasSize[1] = this.rows * 64;
+    this.canvasSize[0] = PERSON_IMG_SIZE;
+    this.canvasSize[1] = PERSON_IMG_SIZE;
     this._ctx = this._canvas.nativeElement.getContext('2d');
-    this._people[0].path = this._getShortestPath(0, 0, 0, 10);
+    this._ctx.fillStyle = "rgba(0, 0, 0, 0)";
+    this._people[0].path = this._getShortestPath(0, 0, 2, 2);
     this._people[0].isMoving = true;
+    // Player has a new tile to head towards. Calculate direction to face.
+    const vertDir = this._people[0].path[1][0] - this._people[0].currTile[0];
+    const horrDir = this._people[0].path[1][1] - this._people[0].currTile[1];
+    this._changePersonDirection(0, this._calculatePersonsNewDirection(horrDir, vertDir));
+
     this._people1.nativeElement.onload = this._animationCycle.bind(this);
   }
 
@@ -151,28 +168,28 @@ export class PeopleComponent implements OnInit {
     const dirCode = (verticalDifference * 10) + horizontalDifference;
     switch(dirCode) {
       case 10: {
-          return PersonDirection.Up;
+          return PersonDirection.Down;
       }
       case 11: {
-          return PersonDirection.Up_Right;
+          return PersonDirection.Down_Right;
       }
       case 1: {
           return PersonDirection.Right;
       }
       case -9: {
-          return PersonDirection.Down_Right;
+          return PersonDirection.Up_Right;
       }
       case -10: {
-          return PersonDirection.Down;
+          return PersonDirection.Up;
       }
       case -11: {
-          return PersonDirection.Down_Left;
+          return PersonDirection.Up_Left;
       }
       case -1: {
           return PersonDirection.Left;
       }
       case 9: {
-          return PersonDirection.Up_Left;
+          return PersonDirection.Down_Left;
       }
       default: {
           console.error('calculatePersonsNewDirection: Impossible dirrection key', dirCode, verticalDifference, horizontalDifference);
@@ -180,9 +197,8 @@ export class PeopleComponent implements OnInit {
     }
   }
 
-  private _rotatePerson(person: Person): void {
-    const currRot = person.currRotation;
-    let rotApplied = -person.currRotation;
+  private _rotatePerson(oldRotation: number, person: Person): void {
+    let rotApplied = -oldRotation;
     switch(person.currDirection) {
       case PersonDirection.Down: {
         rotApplied += 0;
@@ -219,48 +235,74 @@ export class PeopleComponent implements OnInit {
     }
     
     person.currRotation = rotApplied;
-    this._ctx.rotate(rotApplied);
   }
 
   private _animationCycle() {
     this._people
       .filter(person => person.isMoving)
       .forEach((person, index) => {
-          // Person has arrived at next cell in its path. Update position and shed last tile in path.
-          if (this._hasPersonArrivedAtCell(person)) {
-              this._updateCrewInGrid(person.path[0][0], person.path[0][1], -1);
-              person.path.shift();
-              person.position = person.path[0].slice() as [number, number];
-              this._updateCrewInGrid(person.path[0][0], person.path[0][1], person);
-              const xPos = getXPos(person.position[1]);
-              const zPos = getYPos(person.position[0]);
-              this._teleportPerson(person, xPos, zPos);
-          // Still in between tiles, move a little closer to next tile.
-          } else {
-              const nextMove = this._calculatePersonNextMove(person);
-              this._movePerson(person, nextMove[0], nextMove[1]);
-              return;
+        // Person has arrived at next cell in its path. Update position and shed last tile in path.
+        if (this._hasPersonArrivedAtCell(person)) {
+          // this._updateCrewInGrid(person.path[0][0], person.path[0][1], -1);
+          person.path.shift();
+          person.currTile = person.path[0].slice() as [number, number];
+          // this._updateCrewInGrid(person.path[0][0], person.path[0][1], person);
+          const xPos = getXPos(person.currTile[1]);
+          const yPos = getYPos(person.currTile[0]);
+          this._teleportPerson(person, xPos, yPos);
+
+          // TODO: Change of state check
+
+        // Still in between tiles, move a little closer to next tile.
+        } else {
+          const nextMove = this._calculatePersonNextMove(person);
+          this._movePerson(person, nextMove[0], nextMove[1]);
+          return;
+        }
+
+        if (!person.path.length) {
+          console.error('This never should have happened!!!', person);
+        }
+
+        // Person has arrived at the intended destination. Stop moving.
+        if (person.path.length === 1) {
+          person.currTile = person.path.shift();
+          person.path.shift();
+          person.isMoving = false;
+
+          if (person.state === PersonState.Wandering) {
+            let count = 0;
+            do {
+              count++;
+              const colScalar = Math.random() < 0.5 ? -1 : 1;
+              const rowScalar = Math.random() < 0.5 ? -1 : 1;
+              const colMag = Math.floor(Math.random() * 5);
+              const rowMag = Math.floor(Math.random() * 5);
+              const col = person.currTile[1] + (colScalar * colMag);
+              const row = person.currTile[0] + (rowScalar * rowMag);
+              if (this.gridManagerService.isInBounds(row, col) && !this.gridManagerService.isBlocking(row, col)) {
+                const path = this._getShortestPath(person.currTile[0], person.currTile[1], row, col);
+                if (path.length > 1) {
+                  person.path = path;
+                  person.isMoving = true;
+                  // Player has a new tile to head towards. Calculate direction to face.
+                  const vertDir = this._people[0].path[1][0] - this._people[0].currTile[0];
+                  const horrDir = this._people[0].path[1][1] - this._people[0].currTile[1];
+                  this._changePersonDirection(0, this._calculatePersonsNewDirection(horrDir, vertDir));
+                }
+              }
+            } while (!person.isMoving && count < 10);
           }
+          
+          return;
+        }
 
-          if (!person.path.length) {
-              console.error('This never should have happened!!!', person);
-          }
+        // Player has a new tile to head towards. Calculate direction to face.
+        const vertDir = person.path[1][0] - person.currTile[0];
+        const horrDir = person.path[1][1] - person.currTile[1];
 
-          // Person has arrived at the intended destination. Stop moving.
-          if (person.path.length === 1) {
-              person.position = person.path.shift();
-              person.path.shift();
-              person.isMoving = false;
-              
-              return;
-          }
-
-          // Player has a new tile to head towards. Calculate direction to face.
-          const vertDir = person.path[1][0] - person.position[0];
-          const horrDir = person.path[1][1] - person.position[1];
-
-          person.currDirection = this._calculatePersonsNewDirection(horrDir, vertDir);
-          this._rotatePerson(person);
+        person.currDirection = this._calculatePersonsNewDirection(horrDir, vertDir);
+        this._changePersonDirection(index, this._calculatePersonsNewDirection(horrDir, vertDir));
       });
     const movingPeople = this._people.filter(person => person.isMoving);
         
@@ -284,13 +326,20 @@ export class PeopleComponent implements OnInit {
     } else {
       imageLocation = imageLocations[1];
     }
-    this._ctx.clearRect(person.screenPosition[0], person.screenPosition[1], PERSON_ACTUAL_SIZE, PERSON_ACTUAL_SIZE);
+    this._canvas.nativeElement.style.transform = 'rotate(' + person.currRotation + 'deg';
+    this._canvas.nativeElement.style.left = person.position[0] + 'px';
+    this._canvas.nativeElement.style.top = person.position[1] + 'px';
+    this._ctx.clearRect(0, 0, PERSON_IMG_SIZE, PERSON_IMG_SIZE);
     this._ctx.drawImage(
       this._people1.nativeElement,
       imageLocation[0],
       imageLocation[1],
       PERSON_IMG_SIZE,
-      PERSON_IMG_SIZE, person.screenPosition[0], person.screenPosition[1], PERSON_ACTUAL_SIZE, PERSON_ACTUAL_SIZE);
+      PERSON_IMG_SIZE,
+      PERSON_OFFSET,
+      PERSON_OFFSET,
+      PERSON_ACTUAL_SIZE,
+      PERSON_ACTUAL_SIZE);
 
     person.animationCounter++;
 
@@ -350,6 +399,17 @@ export class PeopleComponent implements OnInit {
             console.error('_calculatePersonNextMove: Impossible direction', person, person.currDirection);
         }
     }
+  }
+
+  /**
+   * Rotates the person in the desired direction.
+   * @param index person index to have its direction altered.
+   * @param newDir new direction to have person face.
+   */
+  private _changePersonDirection(index: number, newDir: PersonDirection): void {
+    const oldDir = this._people[index].currDirection;
+    this._people[index].currDirection = newDir;
+    this._rotatePerson(oldDir, this._people[index]);
   }
 
   /**
@@ -601,8 +661,8 @@ export class PeopleComponent implements OnInit {
    * @param y amount to move crew person along the y-axis.
    */
   private _movePerson(person: Person, x: number, y: number): void {
-    person.screenPosition[0] += x;
-    person.screenPosition[1] += y;
+    person.position[0] += x;
+    person.position[1] += y;
   }
 
   /**
@@ -612,8 +672,8 @@ export class PeopleComponent implements OnInit {
    * @param y coordinate to move person on the y-axis.
    */
   private _teleportPerson(person: Person, x: number, y: number): void {
-    person.screenPosition[0] = x;
-    person.screenPosition[0] = y;
+    person.position[0] = x;
+    person.position[1] = y;
   }
 
   /**
