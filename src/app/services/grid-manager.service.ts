@@ -25,6 +25,10 @@ export class GridManagerService {
     }
   }
 
+  public getTileValue(row: number, col: number): number {
+    return this._grid[row][col];
+  }
+
   /**
    * Checks to see if the tile in question can be travelled to or across.
    * @param row row coordinate in the terrain grid
@@ -51,5 +55,11 @@ export class GridManagerService {
         return false;
     }
     return true;
+  }
+
+  public setTileValue(row: number, col: number, val: number): void {
+    setTimeout(() => {
+      this._grid[row][col] = val;
+    }, 0);
   }
 }

@@ -36,7 +36,8 @@ enum PersonDirection {
 }
 
 enum PersonState {
-  'Wandering' = 0
+  'Idle' = 0,
+  'Wandering' = 1
 }
 
 /**
@@ -52,6 +53,16 @@ interface Person {
    * The three meshes to flip through to simulate a walking animation.
    */
   animationImageLocations: [[number, number], [number, number], [number, number]];
+
+  /**
+   * Canvas reference belonging to this person.
+   */
+  canvas: HTMLCanvasElement;
+
+  /**
+   * Context belonging to this person.
+   */
+  ctx: CanvasRenderingContext2D;
 
   /**
    * Current direction person should be facing.
@@ -109,18 +120,17 @@ export class PeopleComponent implements OnInit {
   @Input() columns: number;
   @Input() rows: number;
 
-  @ViewChild('canvas', { static: true })
-  private _canvas: ElementRef<HTMLCanvasElement>;
   @ViewChild('p1', { static: true })
-  private _people1: ElementRef<HTMLImageElement>;
+  private _patrons: ElementRef<HTMLImageElement>;
 
   private _animationId: number;
-  private _ctx: CanvasRenderingContext2D;
 
   private _people: Person[] = [
     {
       animationCounter: 0,
-      animationImageLocations: [[0, 0], [64, 0], [128, 0]],
+      animationImageLocations: [[0, 192], [64, 192], [128, 192]],
+      canvas: null,
+      ctx: null,
       currDirection: PersonDirection.Down,
       currTile: [0, 0],
       currRotation: 0,
@@ -130,31 +140,77 @@ export class PeopleComponent implements OnInit {
       position: [0, 0],
       state: PersonState.Wandering,
       tileValue: null
+    },
+    {
+      animationCounter: 0,
+      animationImageLocations: [[192, 128], [256, 128], [320, 128]],
+      canvas: null,
+      ctx: null,
+      currDirection: PersonDirection.Right,
+      currTile: [5, 7],
+      currRotation: 0,
+      isMoving: false,
+      path: [],
+      name: 'Douglas Murray',
+      position: [getXPos(7), getYPos(5)],
+      state: PersonState.Wandering,
+      tileValue: null
+    },
+    {
+      animationCounter: 0,
+      animationImageLocations: [[0, 384], [64, 384], [128, 384]],
+      canvas: null,
+      ctx: null,
+      currDirection: PersonDirection.Up,
+      currTile: [9, 3],
+      currRotation: 0,
+      isMoving: false,
+      path: [],
+      name: 'Jack Diggler',
+      position: [getXPos(3), getYPos(9)],
+      state: PersonState.Wandering,
+      tileValue: null
     }
   ]
 
   public canvasSize: [number, number] = [64, 64];
 
-  constructor(private readonly gridManagerService: GridManagerService) {}
+  constructor(
+    private readonly _elem: ElementRef,
+    private readonly _gridManagerService: GridManagerService) {}
 
   ngOnDestroy() {
     cancelAnimationFrame(this._animationId);
-    this._ctx.clearRect(0, 0, this.canvasSize[0], this.canvasSize[1]);
+    this._people
+      .filter(person => person)
+      .forEach(person => person.ctx.clearRect(0, 0, this.canvasSize[0], this.canvasSize[1]));
   }
 
   ngOnInit() {
     this.canvasSize[0] = PERSON_IMG_SIZE;
     this.canvasSize[1] = PERSON_IMG_SIZE;
-    this._ctx = this._canvas.nativeElement.getContext('2d');
-    this._ctx.fillStyle = "rgba(0, 0, 0, 0)";
-    this._people[0].path = this._getShortestPath(0, 0, 2, 2);
-    this._people[0].isMoving = true;
-    // Player has a new tile to head towards. Calculate direction to face.
-    const vertDir = this._people[0].path[1][0] - this._people[0].currTile[0];
-    const horrDir = this._people[0].path[1][1] - this._people[0].currTile[1];
-    this._changePersonDirection(0, this._calculatePersonsNewDirection(horrDir, vertDir));
+    
+  }
 
-    this._people1.nativeElement.onload = this._animationCycle.bind(this);
+  ngAfterViewInit() {
+    const canvases = this._elem.nativeElement.getElementsByTagName('canvas');
+    this._people
+      .filter(person => person)
+      .forEach((person, index) => {
+        person.canvas = canvases[index] as HTMLCanvasElement;
+        person.ctx = (person.canvas as HTMLCanvasElement).getContext('2d');
+        person.ctx.fillStyle = "rgba(0, 0, 0, 0)";
+        person.path = this._getShortestPath(person.currTile[0], person.currTile[1], person.currTile[0] + 2, person.currTile[1] + 2);
+        person.isMoving = true;
+        // Player has a new tile to head towards. Calculate direction to face.
+        const vertDir = person.path[1][0] - person.currTile[0];
+        const horrDir = person.path[1][1] - person.currTile[1];
+        this._changePersonDirection(index, this._calculatePersonsNewDirection(horrDir, vertDir));
+        // Update the tile value.
+        this._updateCrewInGrid(person.currTile[0], person.currTile[1], index);
+      });
+
+    this._patrons.nativeElement.onload = this._animationCycle.bind(this);
   }
 
   /**
@@ -198,7 +254,8 @@ export class PeopleComponent implements OnInit {
   }
 
   private _rotatePerson(oldRotation: number, person: Person): void {
-    let rotApplied = -oldRotation;
+    person.currRotation = -oldRotation;
+    let rotApplied = 0;
     switch(person.currDirection) {
       case PersonDirection.Down: {
         rotApplied += 0;
@@ -232,6 +289,9 @@ export class PeopleComponent implements OnInit {
         rotApplied += RAD_315_DEG_LEFT;
         break;
       }
+      default: {
+        console.error("_rotatePerson", "Received an invalid direction");
+      }
     }
     
     person.currRotation = rotApplied;
@@ -243,10 +303,10 @@ export class PeopleComponent implements OnInit {
       .forEach((person, index) => {
         // Person has arrived at next cell in its path. Update position and shed last tile in path.
         if (this._hasPersonArrivedAtCell(person)) {
-          // this._updateCrewInGrid(person.path[0][0], person.path[0][1], -1);
+          this._updateCrewInGrid(person.path[0][0], person.path[0][1], -1);
           person.path.shift();
           person.currTile = person.path[0].slice() as [number, number];
-          // this._updateCrewInGrid(person.path[0][0], person.path[0][1], person);
+          this._updateCrewInGrid(person.path[0][0], person.path[0][1], index);
           const xPos = getXPos(person.currTile[1]);
           const yPos = getYPos(person.currTile[0]);
           this._teleportPerson(person, xPos, yPos);
@@ -280,18 +340,22 @@ export class PeopleComponent implements OnInit {
               const rowMag = Math.floor(Math.random() * 5);
               const col = person.currTile[1] + (colScalar * colMag);
               const row = person.currTile[0] + (rowScalar * rowMag);
-              if (this.gridManagerService.isInBounds(row, col) && !this.gridManagerService.isBlocking(row, col)) {
+              if (this._gridManagerService.isInBounds(row, col) && !this._gridManagerService.isBlocking(row, col)) {
                 const path = this._getShortestPath(person.currTile[0], person.currTile[1], row, col);
                 if (path.length > 1) {
                   person.path = path;
                   person.isMoving = true;
                   // Player has a new tile to head towards. Calculate direction to face.
-                  const vertDir = this._people[0].path[1][0] - this._people[0].currTile[0];
-                  const horrDir = this._people[0].path[1][1] - this._people[0].currTile[1];
-                  this._changePersonDirection(0, this._calculatePersonsNewDirection(horrDir, vertDir));
+                  const vertDir = person.path[1][0] - person.currTile[0];
+                  const horrDir = person.path[1][1] - person.currTile[1];
+                  this._changePersonDirection(index, this._calculatePersonsNewDirection(horrDir, vertDir));
                 }
               }
             } while (!person.isMoving && count < 10);
+
+            if (!person.isMoving) {
+              person.state = PersonState.Idle;
+            }
           }
           
           return;
@@ -326,12 +390,12 @@ export class PeopleComponent implements OnInit {
     } else {
       imageLocation = imageLocations[1];
     }
-    this._canvas.nativeElement.style.transform = 'rotate(' + person.currRotation + 'deg';
-    this._canvas.nativeElement.style.left = person.position[0] + 'px';
-    this._canvas.nativeElement.style.top = person.position[1] + 'px';
-    this._ctx.clearRect(0, 0, PERSON_IMG_SIZE, PERSON_IMG_SIZE);
-    this._ctx.drawImage(
-      this._people1.nativeElement,
+    person.canvas.style.transform = 'rotate(' + person.currRotation + 'deg)';
+    person.canvas.style.left = person.position[0] + 'px';
+    person.canvas.style.top = person.position[1] + 'px';
+    person.ctx.clearRect(0, 0, PERSON_IMG_SIZE, PERSON_IMG_SIZE);
+    person.ctx.drawImage(
+      this._patrons.nativeElement,
       imageLocation[0],
       imageLocation[1],
       PERSON_IMG_SIZE,
@@ -407,9 +471,9 @@ export class PeopleComponent implements OnInit {
    * @param newDir new direction to have person face.
    */
   private _changePersonDirection(index: number, newDir: PersonDirection): void {
-    const oldDir = this._people[index].currDirection;
+    const oldRotation = this._people[index].currRotation;
     this._people[index].currDirection = newDir;
-    this._rotatePerson(oldDir, this._people[index]);
+    this._rotatePerson(oldRotation, this._people[index]);
   }
 
   /**
@@ -465,7 +529,7 @@ export class PeopleComponent implements OnInit {
       }
 
       // Checks if next tile in straightish path is out of bounds or blocked.
-      if (!this.gridManagerService.isInBounds(nextCell[0], nextCell[1]) || this.gridManagerService.isBlocking(nextCell[0], nextCell[1])) {
+      if (!this._gridManagerService.isInBounds(nextCell[0], nextCell[1]) || this._gridManagerService.isBlocking(nextCell[0], nextCell[1])) {
           return false;
       }
     }
@@ -532,7 +596,7 @@ export class PeopleComponent implements OnInit {
         })
         // Only in-bounds and unobstructed tiles are considered.
         .filter(tile => {
-            return this.gridManagerService.isInBounds(tile[0], tile[1]) && !this.gridManagerService.isBlocking(tile[0], tile[1]);
+            return this._gridManagerService.isInBounds(tile[0], tile[1]) && !this._gridManagerService.isBlocking(tile[0], tile[1]);
         });
 
     // Check paths leading out from these neighboring cells.
@@ -583,7 +647,7 @@ export class PeopleComponent implements OnInit {
     pathFindMemo = {};
 
     // TODO: For now, don't let person travel to blocked tile. Eventually pick an adjacent tile.
-    if (this.gridManagerService.isBlocking(row2, col2)) {
+    if (this._gridManagerService.isBlocking(row2, col2)) {
         return [];
     }
 
@@ -609,7 +673,7 @@ export class PeopleComponent implements OnInit {
         })
         // Only in-bounds and unobstructed tiles are considered.
         .filter(tile => {
-            return this.gridManagerService.isInBounds(tile[0], tile[1]) && !this.gridManagerService.isBlocking(tile[0], tile[1]);
+            return this._gridManagerService.isInBounds(tile[0], tile[1]) && !this._gridManagerService.isBlocking(tile[0], tile[1]);
         });
 
     // Check paths leading out from these neighboring cells.
@@ -685,17 +749,17 @@ export class PeopleComponent implements OnInit {
    */
   private _updateCrewInGrid(row: number, col: number, person: number | Person): number {
     // If -1 then the person has left the tile, and it needs to be reset.
-    // if (person === -1 && this.gridManagerService.isInBounds(row, col)) {
-    //     this._grid[row][col][2] = 0;
-    //     return 0;
-    // }
+    if (person === -1 && this._gridManagerService.isInBounds(row, col)) {
+      this._gridManagerService.setTileValue(row, col, 0);
+      return 0;
+    }
 
-    // const tileVal: number = (typeof person !== 'number') ? person.tileValue : this._ancientRuinsSpec.crew[person].tileValue;
-    // if (this.gridManagerService.isInBounds(row, col) && (!this.gridManagerService.isBlocking(this._grid[row][col][2]) || this._grid[row][col][2] < this._tileCtrl.getLandingZoneValue())) {
-    //     this._grid[row][col][2] = tileVal;
+    const tileVal: number = Number(person) + 1;
+    if (this._gridManagerService.isInBounds(row, col) && (!this._gridManagerService.isBlocking(row, col))) {
+      this._gridManagerService.setTileValue(row, col, tileVal);
 
-    //     return tileVal;
-    // }
+      return tileVal;
+    }
 
     // Row/Col not in range or blocked.
     return 0;
