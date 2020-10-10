@@ -1,5 +1,30 @@
 import { Injectable } from '@angular/core';
 
+export interface GridDictionaryValue {
+  blocker?: boolean;
+  customSize?: [number, number];
+  description: string;
+  hasVariation?: boolean;
+  spritePosition: [number, number];
+  xPosMod?: number;
+  xScaleMod?: number;
+  yPosMod?: number;
+  yScaleMod?: number;
+}
+
+export interface GridDictionary {
+  [key: number]: GridDictionaryValue
+}
+
+const gridDictionary: GridDictionary = {
+  100: {
+      blocker: false,
+      description: 'Lush green grass',
+      spritePosition: [1, 1],
+      hasVariation: false
+    },
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -8,7 +33,7 @@ export class GridManagerService {
   private maxRows: number;
   private minCols: number = 0;
   private minRows: number = 0;
-  private readonly _grid: number[][] = [];
+  private readonly _grid: number[][][] = [];
 
   constructor() { }
 
@@ -20,13 +45,13 @@ export class GridManagerService {
         if (!this._grid[row]) {
           this._grid[row] = [];
         }
-        this._grid[row][col] = 0;
+        this._grid[row][col] = [0, 0, 0, 0];
       }
     }
   }
 
-  public getTileValue(row: number, col: number): number {
-    return this._grid[row][col];
+  public getTileValue(row: number, col: number, vLayer: number): number {
+    return this._grid[row][col][vLayer];
   }
 
   /**
@@ -36,7 +61,7 @@ export class GridManagerService {
    * @returns TRUE if that tile is a blocking tile | FALSE if it is not blocking
    */
   public isBlocking(row: number, col: number): boolean {
-    return !!this._grid[row][col];
+    return !!this._grid[row][col][1];
   }
 
   /**
@@ -46,20 +71,17 @@ export class GridManagerService {
    * @returns TRUE is in grid range | FALSE not in grid range
    */
   public isInBounds(row: number, col: number): boolean {
-    if (row < this.minRows || row > this.maxRows) {
+    if (row < this.minRows || row >= this.maxRows) {
         return false;
-    } else if (col < this.minCols || col > this.maxCols) {
-        return false;
-    // Makes sure nothing can be populated behind the control panel.
-    } else if (row === this.minRows && col > this.maxCols - 4) {
+    } else if (col < this.minCols || col >= this.maxCols) {
         return false;
     }
     return true;
   }
 
-  public setTileValue(row: number, col: number, val: number): void {
+  public setTileValue(row: number, col: number, vLayer: number, val: number): void {
     setTimeout(() => {
-      this._grid[row][col] = val;
+      this._grid[row][col][vLayer] = val;
     }, 0);
   }
 }

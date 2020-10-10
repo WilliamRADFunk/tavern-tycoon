@@ -1,5 +1,5 @@
 <div id="main-container" class="m-0 p-0 bg-secondary" [scrollTop]="sTop" [scrollLeft]="sLeft" style="height: 100vh;">
- <tt-background class="full-screen layer-1" [devMode]="devMode"></tt-background>
+ <tt-background class="full-screen layer-1" [devMode]="devMode" [columns]="columns" [rows]="rows"></tt-background>
  <tt-people class="full-screen layer-3" [columns]="columns" [rows]="rows"></tt-people>
- <tt-game-grid class="full-screen layer-dev-grid" [columns]="columns" [rows]="rows"></tt-game-grid>
+ <tt-game-grid class="full-screen layer-dev-grid" [devMode]="devMode" [columns]="columns" [rows]="rows"></tt-game-grid>
 </div>

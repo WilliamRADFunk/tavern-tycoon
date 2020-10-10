@@ -750,13 +750,13 @@ export class PeopleComponent implements OnInit {
   private _updateCrewInGrid(row: number, col: number, person: number | Person): number {
     // If -1 then the person has left the tile, and it needs to be reset.
     if (person === -1 && this._gridManagerService.isInBounds(row, col)) {
-      this._gridManagerService.setTileValue(row, col, 0);
+      this._gridManagerService.setTileValue(row, col, 1, 0);
       return 0;
     }
 
     const tileVal: number = Number(person) + 1;
     if (this._gridManagerService.isInBounds(row, col) && (!this._gridManagerService.isBlocking(row, col))) {
-      this._gridManagerService.setTileValue(row, col, tileVal);
+      this._gridManagerService.setTileValue(row, col, 1, tileVal);
 
       return tileVal;
     }

@@ -8,6 +8,7 @@ import { GridManagerService } from 'src/app/services/grid-manager.service';
 })
 export class GameGridComponent implements OnInit {
   @Input() columns: number;
+  @Input() devMode: boolean;
   @Input() rows: number;
 
   public colset: number[];
@@ -20,8 +21,16 @@ export class GameGridComponent implements OnInit {
     this.rowset = new Array(this.rows);
   }
 
-  public getTileValue(row: number, col: number): number {
-    return this._gridManagerService.getTileValue(row, col);
+  public getTileValue(row: number, col: number): string {
+    return `${
+        this._gridManagerService.getTileValue(row, col, 0)
+      }-${
+        this._gridManagerService.getTileValue(row, col, 1)
+      }-${
+        this._gridManagerService.getTileValue(row, col, 2)
+      }-${
+        this._gridManagerService.getTileValue(row, col, 3)
+      }`;
   }
 
 }
