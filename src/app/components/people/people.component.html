@@ -1,4 +1,9 @@
 <img #p1 src="assets/images/sprite-map-patron-1.png" width="512px" height="512px" class="d-none"/>
 <ng-container #canvases style="box-sizing: border-box; position: absolute;">
-    <canvas *ngFor="let person of [1, 2, 3]; let i = index;" [width]="canvasSize[0]" [height]="canvasSize[1]" class="border {{'person' + i}}" style="box-sizing: border-box; position: absolute;"></canvas>
+    <canvas *ngFor="let person of [1, 2, 3]; let i = index;"
+      [width]="canvasSize[0]"
+      [height]="canvasSize[1]"
+      class="border {{'person' + i}}"
+      style="box-sizing: border-box; position: absolute;">
+    </canvas>
 </ng-container>

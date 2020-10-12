@@ -13,7 +13,7 @@ export interface GridDictionaryValue {
 }
 
 export interface GridDictionary {
-  [key: number]: GridDictionaryValue
+  [key: number]: GridDictionaryValue;
 }
 
 const gridDictionary: GridDictionary = {

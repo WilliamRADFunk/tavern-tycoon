@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { GridManagerService } from 'src/app/services/grid-manager.service';
 
 const adjacencyMods: [number, number][] = [ [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1] ];
@@ -17,10 +17,10 @@ const PERSON_IMG_SIZE = 64;
 const PERSON_OFFSET = 8;
 const walkingSpeed = 0.2;
 
-const getXPos = function(col: number): number {
+const getXPos: (col: number) => number = (col) => {
   return (col * 64);
 };
-const getYPos = function(row: number): number {
+const getYPos: (row: number) => number = (row) => {
   return (row * 64);
 };
 
@@ -96,12 +96,12 @@ interface Person {
   name: string;
 
   /**
-   * Row, Column tile position of the person. 
+   * Row, Column tile position of the person.
    */
   position: [number, number];
 
   /**
-   * State of the person. 
+   * State of the person.
    */
   state: PersonState;
 
@@ -171,7 +171,7 @@ export class PeopleComponent implements OnInit {
       state: PersonState.Wandering,
       tileValue: null
     }
-  ]
+  ];
 
   public canvasSize: [number, number] = [64, 64];
 
@@ -189,7 +189,6 @@ export class PeopleComponent implements OnInit {
   ngOnInit() {
     this.canvasSize[0] = PERSON_IMG_SIZE;
     this.canvasSize[1] = PERSON_IMG_SIZE;
-    
   }
 
   ngAfterViewInit() {
@@ -199,13 +198,10 @@ export class PeopleComponent implements OnInit {
       .forEach((person, index) => {
         person.canvas = canvases[index] as HTMLCanvasElement;
         person.ctx = (person.canvas as HTMLCanvasElement).getContext('2d');
-        person.ctx.fillStyle = "rgba(0, 0, 0, 0)";
+        person.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
         person.path = this._getShortestPath(person.currTile[0], person.currTile[1], person.currTile[0] + 2, person.currTile[1] + 2);
         person.isMoving = true;
-        // Player has a new tile to head towards. Calculate direction to face.
-        const vertDir = person.path[1][0] - person.currTile[0];
-        const horrDir = person.path[1][1] - person.currTile[1];
-        this._changePersonDirection(index, this._calculatePersonsNewDirection(horrDir, vertDir));
+        this._changePersonDirection(index, this._calculatePersonsNewDirection(person));
         // Update the tile value.
         this._updateCrewInGrid(person.currTile[0], person.currTile[1], index);
       });
@@ -214,15 +210,16 @@ export class PeopleComponent implements OnInit {
   }
 
   /**
-    * Based on the difference in row and column of current person tile and their next, this finds new person direction.
-    * @param horizontalDifference difference in row coordinates between person's current tile and the next.
-    * @param verticalDifference difference in column coordinates between person's current tile and the next.
-    * @returns the new direction the person should be facing.
-    */
-  private _calculatePersonsNewDirection(horizontalDifference: number, verticalDifference: number): PersonDirection {
+   * Based on the difference in row and column of current person tile and their next, this finds new person direction.
+   * @param Person whose new direction is to be calculated.
+   * @returns the new direction the person should be facing.
+   */
+  private _calculatePersonsNewDirection(person: Person): PersonDirection {
+    const verticalDifference = person.path[1][0] - person.currTile[0];
+    const horizontalDifference = person.path[1][1] - person.currTile[1];
     // vertical difference * 10 + horrizontal difference = unique number for each of 8 possible directions without all the if-elses.
     const dirCode = (verticalDifference * 10) + horizontalDifference;
-    switch(dirCode) {
+    switch (dirCode) {
       case 10: {
           return PersonDirection.Down;
       }
@@ -256,7 +253,7 @@ export class PeopleComponent implements OnInit {
   private _rotatePerson(oldRotation: number, person: Person): void {
     person.currRotation = -oldRotation;
     let rotApplied = 0;
-    switch(person.currDirection) {
+    switch (person.currDirection) {
       case PersonDirection.Down: {
         rotApplied += 0;
         break;
@@ -290,10 +287,10 @@ export class PeopleComponent implements OnInit {
         break;
       }
       default: {
-        console.error("_rotatePerson", "Received an invalid direction");
+        console.error('_rotatePerson', 'Received an invalid direction');
       }
     }
-    
+
     person.currRotation = rotApplied;
   }
 
@@ -345,10 +342,7 @@ export class PeopleComponent implements OnInit {
                 if (path.length > 1) {
                   person.path = path;
                   person.isMoving = true;
-                  // Player has a new tile to head towards. Calculate direction to face.
-                  const vertDir = person.path[1][0] - person.currTile[0];
-                  const horrDir = person.path[1][1] - person.currTile[1];
-                  this._changePersonDirection(index, this._calculatePersonsNewDirection(horrDir, vertDir));
+                  this._changePersonDirection(index, this._calculatePersonsNewDirection(person));
                 }
               }
             } while (!person.isMoving && count < 10);
@@ -357,19 +351,14 @@ export class PeopleComponent implements OnInit {
               person.state = PersonState.Idle;
             }
           }
-          
+
           return;
         }
 
-        // Player has a new tile to head towards. Calculate direction to face.
-        const vertDir = person.path[1][0] - person.currTile[0];
-        const horrDir = person.path[1][1] - person.currTile[1];
-
-        person.currDirection = this._calculatePersonsNewDirection(horrDir, vertDir);
-        this._changePersonDirection(index, this._calculatePersonsNewDirection(horrDir, vertDir));
+        this._changePersonDirection(index, this._calculatePersonsNewDirection(person));
       });
     const movingPeople = this._people.filter(person => person.isMoving);
-        
+
     movingPeople.forEach(person => {
         this._animatePerson(person);
     });
@@ -434,7 +423,7 @@ export class PeopleComponent implements OnInit {
    * @returns the x,z coordinate amounts to move in those directions.
    */
   private _calculatePersonNextMove(person: Person): [number, number] {
-    switch(person.currDirection) {
+    switch (person.currDirection) {
         case PersonDirection.Down: {
             return [0, walkingSpeed];
         }
@@ -492,7 +481,8 @@ export class PeopleComponent implements OnInit {
    * @param col coordinate of the tile
    * @param testPath path up to, but not including, the tested cell
    * @param startCell tile the person is starting from
-   * @returns TRUE means there was a shorter path to current tile if in straightish line | FALSE means the straightish path was longer or blocked
+   * @returns TRUE means there was a shorter path to current tile if in straightish line |
+   * FALSE means the straightish path was longer or blocked
    */
   private _checkShorterLinearPath(row: number, col: number, testPath: number[], startCell: number): boolean {
     const startPos = this._convertCellToRowCol(startCell);
@@ -556,79 +546,86 @@ export class PeopleComponent implements OnInit {
 
   /**
    * Recursive function to find each path that leads to the target cell.
-   * @param row coordinate of the tile
-   * @param col coordinate of the tile
-   * @param testPath used to push and pop values depending on the success of the path
-   * @param targetCell reference number fot the cell person is trying to reach
-   * @returns true if this cell is target cell, false if path is blocked, out of bounds, too long, cyclical, or meandering
+   * @param nextRow row coordinate of the next tile.
+   * @param nextCol column coordinate of the next tile.
+   * @param targetRow row coordinate of the final tile.
+   * @param targetCol column coordinate of the final tile.
+   * @param testPath used to push and pop values depending on the success of the path.
+   * @param targetCell reference number fot the cell person is trying to reach.
+   * @returns true if this cell is target cell, false if path is blocked, out of bounds, too long, cyclical, or meandering.
    */
-  private _getShortestPathRec(nextRow: number, nextCol: number, targetRow: number, targetCol: number, testPath: number[], targetCell: number): boolean {
+  private _getShortestPathRec(
+    nextRow: number,
+    nextCol: number,
+    targetRow: number,
+    targetCol: number,
+    testPath: number[],
+    targetCell: number
+  ): boolean {
     const nextCell = this._convertRowColToCell(nextRow, nextCol);
     testPath.push(nextCell);
 
     // If potential path reaches 50 or more tiles, it's already too long. Bail out early (too long).
     if (testPath.length >= 65) {
-        console.log('Path too long. Bail out early.');
-        return false;
+      console.log('Path too long. Bail out early.');
+      return false;
     }
 
     // Found the target, time to bail out.
     if (nextCell === targetCell) {
-        return true;
+      return true;
     }
 
     // There is a shorter, straightish (unblocked) path between this point and starting point. Bail out early (meandering).
     if (this._checkShorterLinearPath(nextRow, nextCol, testPath, testPath[0])) {
-        return false;
+      return false;
     }
 
     // List of neighboring tiles to starting point, ordered by closeness to target cell.
     const closenessScores = adjacencyMods
-        // Gets row, col, and distance of considered tile with target tile.
-        .map(mod => {
-            const testedRow = nextRow + mod[0];
-            const testedCol = nextCol + mod[1];
-            return [testedRow, testedCol, this._calculateDistance(testedRow, testedCol, targetRow, targetCol)];
-        })
-        // Check cells in order of closer distance to target cell
-        .sort((tile1, tile2) => {
-            return tile1[2] - tile2[2];
-        })
-        // Only in-bounds and unobstructed tiles are considered.
-        .filter(tile => {
-            return this._gridManagerService.isInBounds(tile[0], tile[1]) && !this._gridManagerService.isBlocking(tile[0], tile[1]);
-        });
+      // Gets row, col, and distance of considered tile with target tile.
+      .map(mod => {
+        const testedRow = nextRow + mod[0];
+        const testedCol = nextCol + mod[1];
+        return [testedRow, testedCol, this._calculateDistance(testedRow, testedCol, targetRow, targetCol)];
+      })
+      // Check cells in order of closer distance to target cell
+      .sort((tile1, tile2) => {
+        return tile1[2] - tile2[2];
+      })
+      // Only in-bounds and unobstructed tiles are considered.
+      .filter(tile => {
+        return this._gridManagerService.isInBounds(tile[0], tile[1]) && !this._gridManagerService.isBlocking(tile[0], tile[1]);
+      });
 
     // Check paths leading out from these neighboring cells.
-    for (let x = 0; x < closenessScores.length; x++) {
-        const tile = closenessScores[x];
-        const nextNextCell = this._convertRowColToCell(tile[0], tile[1]);
+    for (const tile of closenessScores) {
+      const nextNextCell = this._convertRowColToCell(tile[0], tile[1]);
 
-        // If -1 in the memoization table, then we've already looked at this cell and found it to be a failure.
-        if (pathFindMemo[nextNextCell] === -1 || pathFindMemo[nextNextCell] < (testPath.length + 1)) {
-            continue;
-        }
+      // If -1 in the memoization table, then we've already looked at this cell and found it to be a failure.
+      if (pathFindMemo[nextNextCell] === -1 || pathFindMemo[nextNextCell] < (testPath.length + 1)) {
+        continue;
+      }
 
-        // Avoid revisiting a tile that's already in possible path, otherwise infinite looping can happen.
-        if (this._checkForCycle(testPath, nextNextCell)) {
-            continue;
-        }
+      // Avoid revisiting a tile that's already in possible path, otherwise infinite looping can happen.
+      if (this._checkForCycle(testPath, nextNextCell)) {
+        continue;
+      }
 
-        // If adjacent cell is the target cell, add it and bail.
-        if (nextNextCell === targetCell) {
-            testPath.push(nextNextCell);
-            pathFindMemo[nextNextCell] = testPath.length;
-            return true;
-        }
+      // If adjacent cell is the target cell, add it and bail.
+      if (nextNextCell === targetCell) {
+        testPath.push(nextNextCell);
+        pathFindMemo[nextNextCell] = testPath.length;
+        return true;
+      }
 
-        // If path proves true, go all the way back up the rabbit hole.
-        if (this._getShortestPathRec(tile[0], tile[1], targetRow, targetCol, testPath, targetCell)) {
-            return true;
-        }
+      // If path proves true, go all the way back up the rabbit hole.
+      if (this._getShortestPathRec(tile[0], tile[1], targetRow, targetCol, testPath, targetCell)) {
+        return true;
+      }
 
-        // If path proves false, pop the last cell to prepare for the next iteration.
-        pathFindMemo[testPath.pop()] = -1;
-
+      // If path proves false, pop the last cell to prepare for the next iteration.
+      pathFindMemo[testPath.pop()] = -1;
     }
     // All neighboring options proved to be cyclical. Bail out (cycle).
     return false;
@@ -648,7 +645,7 @@ export class PeopleComponent implements OnInit {
 
     // TODO: For now, don't let person travel to blocked tile. Eventually pick an adjacent tile.
     if (this._gridManagerService.isBlocking(row2, col2)) {
-        return [];
+      return [];
     }
 
     const startCell = this._convertRowColToCell(row1, col1);
@@ -656,42 +653,41 @@ export class PeopleComponent implements OnInit {
 
     // Person is already in that cell. Bail out early.
     if (startCell === targetCell) {
-        return [];
+      return [];
     }
 
     // List of neighboring tiles to starting point, ordered by closeness to target cell.
     const closenessScores = adjacencyMods
-        // Gets row, col, and distance of considered tile with target tile.
-        .map(mod => {
-            const testedRow = row1 + mod[0];
-            const testedCol = col1 + mod[1];
-            return [testedRow, testedCol, this._calculateDistance(testedRow, testedCol, row2, col2)];
-        })
-        // Check cells in order of closer distance to target cell
-        .sort((tile1, tile2) => {
-            return tile1[2] - tile2[2];
-        })
-        // Only in-bounds and unobstructed tiles are considered.
-        .filter(tile => {
-            return this._gridManagerService.isInBounds(tile[0], tile[1]) && !this._gridManagerService.isBlocking(tile[0], tile[1]);
-        });
+      // Gets row, col, and distance of considered tile with target tile.
+      .map(mod => {
+        const testedRow = row1 + mod[0];
+        const testedCol = col1 + mod[1];
+        return [testedRow, testedCol, this._calculateDistance(testedRow, testedCol, row2, col2)];
+      })
+      // Check cells in order of closer distance to target cell
+      .sort((tile1, tile2) => {
+        return tile1[2] - tile2[2];
+      })
+      // Only in-bounds and unobstructed tiles are considered.
+      .filter(tile => {
+        return this._gridManagerService.isInBounds(tile[0], tile[1]) && !this._gridManagerService.isBlocking(tile[0], tile[1]);
+      });
 
     // Check paths leading out from these neighboring cells.
     const path = [startCell];
-    for (let x = 0; x < closenessScores.length; x++) {
-        const tile = closenessScores[x];
-        const nextCell = this._convertRowColToCell(tile[0], tile[1]);
+    for (const tile of closenessScores) {
+      const nextCell = this._convertRowColToCell(tile[0], tile[1]);
 
-        // If adjacent cell is the target cell, add it and bail.
-        if (nextCell === targetCell) {
-            path.push(nextCell);
-            return path.map(cell => this._convertCellToRowCol(cell));
-        }
+      // If adjacent cell is the target cell, add it and bail.
+      if (nextCell === targetCell) {
+        path.push(nextCell);
+        return path.map(cell => this._convertCellToRowCol(cell));
+      }
 
-        // If final cell is target cell, we've found our shortest path.
-        if (this._getShortestPathRec(tile[0], tile[1], row2, col2, path, targetCell)) {
-            return path.map(cell => this._convertCellToRowCol(cell));
-        }
+      // If final cell is target cell, we've found our shortest path.
+      if (this._getShortestPathRec(tile[0], tile[1], row2, col2, path, targetCell)) {
+        return path.map(cell => this._convertCellToRowCol(cell));
+      }
     }
 
     // Having reached this point, there was no viable path to target cell.
@@ -719,7 +715,7 @@ export class PeopleComponent implements OnInit {
   }
 
   /**
-   * 
+   *
    * @param person selected individual person of the team to move.
    * @param x amount to move crew person along the x-axis.
    * @param y amount to move crew person along the y-axis.
