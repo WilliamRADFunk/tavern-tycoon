@@ -132,12 +132,12 @@ export class PeopleComponent implements OnInit {
       canvas: null,
       ctx: null,
       currDirection: PersonDirection.Down,
-      currTile: [0, 0],
+      currTile: [1, 0],
       currRotation: 0,
       isMoving: false,
       path: [],
       name: 'Bingo Bango',
-      position: [0, 0],
+      position: [getXPos(0), getYPos(1)],
       state: PersonState.Wandering,
       tileValue: null
     },
@@ -147,12 +147,12 @@ export class PeopleComponent implements OnInit {
       canvas: null,
       ctx: null,
       currDirection: PersonDirection.Right,
-      currTile: [5, 7],
+      currTile: [4, 6],
       currRotation: 0,
       isMoving: false,
       path: [],
       name: 'Douglas Murray',
-      position: [getXPos(7), getYPos(5)],
+      position: [getXPos(6), getYPos(4)],
       state: PersonState.Wandering,
       tileValue: null
     },
@@ -162,12 +162,12 @@ export class PeopleComponent implements OnInit {
       canvas: null,
       ctx: null,
       currDirection: PersonDirection.Up,
-      currTile: [9, 3],
+      currTile: [3, 9],
       currRotation: 0,
       isMoving: false,
       path: [],
       name: 'Jack Diggler',
-      position: [getXPos(3), getYPos(9)],
+      position: [getXPos(9), getYPos(3)],
       state: PersonState.Wandering,
       tileValue: null
     }
@@ -199,7 +199,7 @@ export class PeopleComponent implements OnInit {
         person.canvas = canvases[index] as HTMLCanvasElement;
         person.ctx = (person.canvas as HTMLCanvasElement).getContext('2d');
         person.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-        person.path = this._getShortestPath(person.currTile[0], person.currTile[1], person.currTile[0] + 2, person.currTile[1] + 2);
+        person.path = this._getShortestPath(person.currTile[0], person.currTile[1], person.currTile[0] + 1, person.currTile[1] + 2);
         person.isMoving = true;
         this._changePersonDirection(index, this._calculatePersonsNewDirection(person));
         // Update the tile value.

@@ -45,7 +45,11 @@ export class GridManagerService {
         if (!this._grid[row]) {
           this._grid[row] = [];
         }
-        this._grid[row][col] = [0, 0, 0, 0];
+        if (row >= 1 && row <= 6) {
+          this._grid[row][col] = [0, 0, 0, 0];
+        } else {
+          this._grid[row][col] = [0, 1, 0, 0];
+        }
       }
     }
   }
