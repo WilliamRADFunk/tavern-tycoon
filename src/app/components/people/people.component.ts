@@ -128,7 +128,7 @@ export class PeopleComponent implements OnInit {
   private _people: Person[] = [
     {
       animationCounter: 0,
-      animationImageLocations: [[0, 192], [64, 192], [128, 192]],
+      animationImageLocations: [[0, 0], [64, 0], [128, 0]],
       canvas: null,
       ctx: null,
       currDirection: PersonDirection.Down,
