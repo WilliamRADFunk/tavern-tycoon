@@ -12,10 +12,10 @@ const RAD_225_DEG_LEFT = 225;
 const RAD_270_DEG_LEFT = 270;
 const RAD_315_DEG_LEFT = 315;
 
-const PERSON_ACTUAL_SIZE = 48;
+const PERSON_ACTUAL_SIZE = 36;
 const PERSON_IMG_SIZE = 64;
-const PERSON_OFFSET = 8;
-const walkingSpeed = 0.2;
+const PERSON_OFFSET = 14;
+const walkingSpeed = 0.3;
 
 const getXPos: (col: number) => number = (col) => {
   return (col * 64);
@@ -36,8 +36,10 @@ enum PersonDirection {
 }
 
 enum PersonState {
-  'Idle' = 0,
-  'Wandering' = 1
+  'Crossing_Street' = 0,
+  'Idle' = 1,
+  'Walking' = 2,
+  'Wandering' = 3
 }
 
 /**
@@ -138,7 +140,7 @@ export class PeopleComponent implements OnInit {
       path: [],
       name: 'Bingo Bango',
       position: [getXPos(0), getYPos(1)],
-      state: PersonState.Wandering,
+      state: PersonState.Crossing_Street,
       tileValue: null
     },
     {
@@ -147,13 +149,13 @@ export class PeopleComponent implements OnInit {
       canvas: null,
       ctx: null,
       currDirection: PersonDirection.Right,
-      currTile: [4, 6],
+      currTile: [6, 6],
       currRotation: 0,
       isMoving: false,
       path: [],
       name: 'Douglas Murray',
-      position: [getXPos(6), getYPos(4)],
-      state: PersonState.Wandering,
+      position: [getXPos(6), getYPos(6)],
+      state: PersonState.Walking,
       tileValue: null
     },
     {
@@ -199,7 +201,7 @@ export class PeopleComponent implements OnInit {
         person.canvas = canvases[index] as HTMLCanvasElement;
         person.ctx = (person.canvas as HTMLCanvasElement).getContext('2d');
         person.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-        person.path = this._getShortestPath(person.currTile[0], person.currTile[1], person.currTile[0] + 1, person.currTile[1] + 2);
+        person.path = this._getShortestPath(person.currTile[0], person.currTile[1], person.currTile[0], person.currTile[1] + 2);
         person.isMoving = true;
         this._changePersonDirection(index, this._calculatePersonsNewDirection(person));
         // Update the tile value.
@@ -296,6 +298,13 @@ export class PeopleComponent implements OnInit {
 
   private _animationCycle() {
     this._people
+      .filter(person => !person.isMoving)
+      .forEach((person, index) => {
+        if (person.path[1] && !this._gridManagerService.isBlocking(person.path[1][0], person.path[1][1])) {
+          person.isMoving = true;
+        }
+      });
+    this._people
       .filter(person => person.isMoving)
       .forEach((person, index) => {
         // Person has arrived at next cell in its path. Update position and shed last tile in path.
@@ -327,7 +336,33 @@ export class PeopleComponent implements OnInit {
           person.path.shift();
           person.isMoving = false;
 
-          if (person.state === PersonState.Wandering) {
+          if (person.state === PersonState.Crossing_Street) {
+            const currTile = person.currTile;
+            const dir = this._gridManagerService.isInBounds(currTile[0] + 1, currTile[1]) && !this._gridManagerService.isBlocking(currTile[0] + 1, currTile[1])
+              ? 1
+              : -1;
+            const nextMove = [currTile[0] + dir, currTile[1]];
+            const backMove = [currTile[0] - dir, currTile[1]];
+            // Move forward
+            if (this._gridManagerService.isInBounds(nextMove[0], nextMove[1]) && !this._gridManagerService.isBlocking(nextMove[0], nextMove[1])) {
+              const path = this._getShortestPath(person.currTile[0], person.currTile[1], nextMove[0], nextMove[1]);
+              if (path.length > 1) {
+                person.path = path;
+                person.isMoving = true;
+              }
+            // Blocked, go backward
+            } else if (this._gridManagerService.isInBounds(backMove[0], backMove[1]) && !this._gridManagerService.isBlocking(backMove[0], backMove[1])) {
+              const path = this._getShortestPath(person.currTile[0], person.currTile[1], backMove[0], backMove[1]);
+              if (path.length > 1) {
+                person.path = path;
+                person.isMoving = true;
+                this._changePersonDirection(index, this._calculatePersonsNewDirection(person));
+              }
+            // Blocked
+            } else {
+              person.isMoving = false;
+            }
+          } else if (person.state === PersonState.Wandering) {
             let count = 0;
             do {
               count++;
@@ -348,7 +383,38 @@ export class PeopleComponent implements OnInit {
             } while (!person.isMoving && count < 10);
 
             if (!person.isMoving) {
-              person.state = PersonState.Idle;
+              this._changeState(person, person.state, PersonState.Idle);
+            }
+          } else if (person.state === PersonState.Walking) {
+            const currTile = person.currTile;
+            // Found special tile (door)
+            if (this._gridManagerService.getTileValue(currTile[0], currTile[1], 2) === 1) {
+              this._changeState(person, person.state, PersonState.Idle); // TODO: Deciding
+              this._changePersonDirection(index, this._gridManagerService.getTileValue(currTile[0], currTile[1], 3));
+              person.canvas.style.transform = 'rotate(' + person.currRotation + 'deg)';
+            } else {
+              const dir = person.currDirection === PersonDirection.Left ? -1 : 1; // Left | Right
+              const nextMove = [currTile[0], currTile[1] + dir];
+              const backMove = [currTile[0], currTile[1] - dir];
+              // Move forward
+              if (this._gridManagerService.isInBounds(nextMove[0], nextMove[1]) && !this._gridManagerService.isBlocking(nextMove[0], nextMove[1])) {
+                const path = this._getShortestPath(person.currTile[0], person.currTile[1], nextMove[0], nextMove[1]);
+                if (path.length > 1) {
+                  person.path = path;
+                  person.isMoving = true;
+                }
+              // Blocked, go backward
+              } else if (this._gridManagerService.isInBounds(backMove[0], backMove[1]) && !this._gridManagerService.isBlocking(backMove[0], backMove[1])) {
+                const path = this._getShortestPath(person.currTile[0], person.currTile[1], backMove[0], backMove[1]);
+                if (path.length > 1) {
+                  person.path = path;
+                  person.isMoving = true;
+                  this._changePersonDirection(index, this._calculatePersonsNewDirection(person));
+                }
+              // Blocked
+              } else {
+                person.isMoving = false;
+              }
             }
           }
 
@@ -463,6 +529,17 @@ export class PeopleComponent implements OnInit {
     const oldRotation = this._people[index].currRotation;
     this._people[index].currDirection = newDir;
     this._rotatePerson(oldRotation, this._people[index]);
+  }
+
+  /**
+   * Changes person's state
+   * @param person person whose state is changing.
+   * @param oldState person's previous state.
+   * @param newState person's new state.
+   */
+  private _changeState(person: Person, oldState: PersonState, newState: PersonState): void {
+    console.log('_changeState', person.name, PersonState[oldState], PersonState[newState]);
+    person.state = newState;
   }
 
   /**

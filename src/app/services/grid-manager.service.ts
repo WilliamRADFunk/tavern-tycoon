@@ -52,6 +52,15 @@ export class GridManagerService {
         }
       }
     }
+    for (let col = 0; col < maxCols; col++) {
+      this._grid[1][col][0] = 1;
+      this._grid[6][col][0] = 1;
+      this._grid[2][col][0] = 2;
+      this._grid[5][col][0] = 2;
+      this._grid[3][col][0] = 3;
+      this._grid[4][col][0] = 3;
+    }
+    this._grid[6][9][2] = 1;
   }
 
   public getTileValue(row: number, col: number, vLayer: number): number {
