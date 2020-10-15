@@ -3,7 +3,8 @@
     <canvas *ngFor="let person of [1, 2, 3]; let i = index;"
       [width]="canvasSize[0]"
       [height]="canvasSize[1]"
-      class="border {{'person' + i}}"
+      class="{{'person' + i}}"
+      [class.border]="devMode"
       style="box-sizing: border-box; position: absolute;">
     </canvas>
 </ng-container>

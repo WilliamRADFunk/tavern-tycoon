@@ -120,6 +120,7 @@ interface Person {
 })
 export class PeopleComponent implements OnInit {
   @Input() columns: number;
+  @Input() devMode: boolean;
   @Input() rows: number;
 
   @ViewChild('p1', { static: true })
@@ -140,7 +141,7 @@ export class PeopleComponent implements OnInit {
       path: [],
       name: 'Bingo Bango',
       position: [getXPos(0), getYPos(1)],
-      state: PersonState.Crossing_Street,
+      state: PersonState.Wandering,
       tileValue: null
     },
     {

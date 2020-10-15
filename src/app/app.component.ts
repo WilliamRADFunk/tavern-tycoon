@@ -10,7 +10,7 @@ export class AppComponent {
   private _isScrolling: boolean = false;
   private _pos = { top: 0, left: 0, x: 0, y: 0 };
 
-  public devMode = true;
+  public devMode = false;
   public columns = 100;
   public rows = 100;
   public sLeft = 0;
