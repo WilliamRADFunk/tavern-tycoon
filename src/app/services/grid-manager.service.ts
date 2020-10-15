@@ -16,6 +16,13 @@ export interface GridDictionary {
   [key: number]: GridDictionaryValue;
 }
 
+export enum TileValues {
+  'Unknown' = 0,
+  'Sidewalk' = 1,
+  'Median' = 2,
+  'Street' = 3
+}
+
 const gridDictionary: GridDictionary = {
   100: {
       blocker: false,
@@ -33,7 +40,7 @@ export class GridManagerService {
   private maxRows: number;
   private minCols: number = 0;
   private minRows: number = 0;
-  private readonly _grid: number[][][] = [];
+  private readonly _grid: [TileValues, number, number, number][][] = [];
 
   constructor() { }
 
@@ -46,19 +53,19 @@ export class GridManagerService {
           this._grid[row] = [];
         }
         if (row >= 1 && row <= 6) {
-          this._grid[row][col] = [0, 0, 0, 0];
+          this._grid[row][col] = [TileValues.Unknown, 0, 0, 0];
         } else {
-          this._grid[row][col] = [0, 1, 0, 0];
+          this._grid[row][col] = [TileValues.Unknown, 1, 0, 0];
         }
       }
     }
     for (let col = 0; col < maxCols; col++) {
-      this._grid[1][col][0] = 1;
-      this._grid[6][col][0] = 1;
-      this._grid[2][col][0] = 2;
-      this._grid[5][col][0] = 2;
-      this._grid[3][col][0] = 3;
-      this._grid[4][col][0] = 3;
+      this._grid[1][col][0] = TileValues.Sidewalk;
+      this._grid[6][col][0] = TileValues.Sidewalk;
+      this._grid[2][col][0] = TileValues.Median;
+      this._grid[5][col][0] = TileValues.Median;
+      this._grid[3][col][0] = TileValues.Street;
+      this._grid[4][col][0] = TileValues.Street;
     }
     this._grid[6][9][2] = 1;
   }

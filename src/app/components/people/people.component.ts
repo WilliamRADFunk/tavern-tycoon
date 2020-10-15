@@ -1,7 +1,8 @@
 import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { GridManagerService } from 'src/app/services/grid-manager.service';
+import { GridManagerService, TileValues } from 'src/app/services/grid-manager.service';
 
 const adjacencyMods: [number, number][] = [ [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1] ];
+const fourSidesMods: [number, number][] = [ [1, 0], [0, 1], [-1, 0], [0, -1] ];
 let pathFindMemo: { [key: number]: number } = {};
 
 const RAD_90_DEG_LEFT = 90;
@@ -28,18 +29,19 @@ enum PersonDirection {
   'Down' = 0,
   'Down_Left' = 1,
   'Left' = 2,
-  'Up_Left' = 3,
-  'Up' = 4,
-  'Up_Right' = 5,
-  'Right' = 6,
-  'Down_Right' = 7,
+  'Right' = 3,
+  'Down_Right' = 4,
+  'Up' = 5,
+  'Up_Left' = 6,
+  'Up_Right' = 7,
 }
 
 enum PersonState {
   'Crossing_Street' = 0,
   'Idle' = 1,
-  'Walking' = 2,
-  'Wandering' = 3
+  'Start_Walking' = 2,
+  'Walking' = 3,
+  'Wandering' = 4
 }
 
 /**
@@ -54,7 +56,7 @@ interface Person {
   /**
    * The three meshes to flip through to simulate a walking animation.
    */
-  animationImageLocations: [[number, number], [number, number], [number, number]];
+  animationImageLocations: [number, number][];
 
   /**
    * Canvas reference belonging to this person.
@@ -131,7 +133,7 @@ export class PeopleComponent implements OnInit {
   private _people: Person[] = [
     {
       animationCounter: 0,
-      animationImageLocations: [[0, 0], [64, 0], [128, 0]],
+      animationImageLocations: [[0, 0], [64, 0], [128, 0], [0, 64], [64, 64], [128, 64]],
       canvas: null,
       ctx: null,
       currDirection: PersonDirection.Down,
@@ -141,12 +143,12 @@ export class PeopleComponent implements OnInit {
       path: [],
       name: 'Bingo Bango',
       position: [getXPos(0), getYPos(1)],
-      state: PersonState.Wandering,
+      state: PersonState.Crossing_Street,
       tileValue: null
     },
     {
       animationCounter: 0,
-      animationImageLocations: [[192, 128], [256, 128], [320, 128]],
+      animationImageLocations: [[192, 128], [256, 128], [320, 128], [192, 128], [256, 128], [320, 128]],
       canvas: null,
       ctx: null,
       currDirection: PersonDirection.Right,
@@ -161,7 +163,7 @@ export class PeopleComponent implements OnInit {
     },
     {
       animationCounter: 0,
-      animationImageLocations: [[0, 384], [64, 384], [128, 384]],
+      animationImageLocations: [[0, 384], [64, 384], [128, 384], [0, 384], [64, 384], [128, 384]],
       canvas: null,
       ctx: null,
       currDirection: PersonDirection.Up,
@@ -262,7 +264,7 @@ export class PeopleComponent implements OnInit {
         break;
       }
       case PersonDirection.Down_Left: {
-        rotApplied += RAD_45_DEG_LEFT;
+        rotApplied += 0;//RAD_45_DEG_LEFT;
         break;
       }
       case PersonDirection.Left: {
@@ -270,15 +272,15 @@ export class PeopleComponent implements OnInit {
         break;
       }
       case PersonDirection.Up_Left: {
-        rotApplied += RAD_135_DEG_LEFT;
+        rotApplied += 0;//RAD_135_DEG_LEFT;
         break;
       }
       case PersonDirection.Up: {
-        rotApplied += RAD_180_DEG_LEFT;
+        rotApplied += 0;//RAD_180_DEG_LEFT;
         break;
       }
       case PersonDirection.Up_Right: {
-        rotApplied += RAD_225_DEG_LEFT;
+        rotApplied += 0;//RAD_225_DEG_LEFT;
         break;
       }
       case PersonDirection.Right: {
@@ -286,7 +288,7 @@ export class PeopleComponent implements OnInit {
         break;
       }
       case PersonDirection.Down_Right: {
-        rotApplied += RAD_315_DEG_LEFT;
+        rotApplied += 0;//RAD_315_DEG_LEFT;
         break;
       }
       default: {
@@ -303,13 +305,17 @@ export class PeopleComponent implements OnInit {
       .forEach((person, index) => {
         if (person.path[1] && !this._gridManagerService.isBlocking(person.path[1][0], person.path[1][1])) {
           person.isMoving = true;
+        } else if (person.state === PersonState.Idle && Math.random() < 0.01) {
+          this._changeState(person, person.state, PersonState.Start_Walking);
+          person.isMoving = true;
+          person.path[0] = [person.currTile[0], person.currTile[1]];
         }
       });
     this._people
       .filter(person => person.isMoving)
       .forEach((person, index) => {
         // Person has arrived at next cell in its path. Update position and shed last tile in path.
-        if (this._hasPersonArrivedAtCell(person)) {
+        if (person.path.length > 1 && this._hasPersonArrivedAtCell(person)) {
           this._updateCrewInGrid(person.path[0][0], person.path[0][1], -1);
           person.path.shift();
           person.currTile = person.path[0].slice() as [number, number];
@@ -319,6 +325,19 @@ export class PeopleComponent implements OnInit {
           this._teleportPerson(person, xPos, yPos);
 
           // TODO: Change of state check
+          const randomChance = Math.random();
+          if (person.state === PersonState.Wandering
+            && this._gridManagerService.getTileValue(person.currTile[0], person.currTile[1], 0) === TileValues.Sidewalk
+            && randomChance < 0.1) {
+              this._changeState(person, person.state, PersonState.Walking);
+              person.path.length = 1;
+          } else if (person.state === PersonState.Walking && randomChance < 0.1) {
+            this._changeState(person, person.state, PersonState.Crossing_Street);
+            person.path.length = 1;
+          } else if (person.state === PersonState.Crossing_Street && person.path.length === 1) {
+            this._changeState(person, person.state, PersonState.Walking);
+            person.path.length = 1;
+          }
 
         // Still in between tiles, move a little closer to next tile.
         } else {
@@ -338,28 +357,13 @@ export class PeopleComponent implements OnInit {
           person.isMoving = false;
 
           if (person.state === PersonState.Crossing_Street) {
-            const currTile = person.currTile;
-            const dir = this._gridManagerService.isInBounds(currTile[0] + 1, currTile[1]) && !this._gridManagerService.isBlocking(currTile[0] + 1, currTile[1])
-              ? 1
-              : -1;
-            const nextMove = [currTile[0] + dir, currTile[1]];
-            const backMove = [currTile[0] - dir, currTile[1]];
-            // Move forward
-            if (this._gridManagerService.isInBounds(nextMove[0], nextMove[1]) && !this._gridManagerService.isBlocking(nextMove[0], nextMove[1])) {
-              const path = this._getShortestPath(person.currTile[0], person.currTile[1], nextMove[0], nextMove[1]);
-              if (path.length > 1) {
-                person.path = path;
-                person.isMoving = true;
-              }
-            // Blocked, go backward
-            } else if (this._gridManagerService.isInBounds(backMove[0], backMove[1]) && !this._gridManagerService.isBlocking(backMove[0], backMove[1])) {
-              const path = this._getShortestPath(person.currTile[0], person.currTile[1], backMove[0], backMove[1]);
-              if (path.length > 1) {
-                person.path = path;
-                person.isMoving = true;
-                this._changePersonDirection(index, this._calculatePersonsNewDirection(person));
-              }
-            // Blocked
+            const nextMove = this._crossStreetModifier(person);
+            const path = this._getShortestPath(person.currTile[0], person.currTile[1], nextMove[0], nextMove[1]);
+
+            if (path.length > 1) {
+              person.path = path;
+              person.isMoving = true;
+              this._changePersonDirection(index, this._calculatePersonsNewDirection(person));
             } else {
               person.isMoving = false;
             }
@@ -386,31 +390,25 @@ export class PeopleComponent implements OnInit {
             if (!person.isMoving) {
               this._changeState(person, person.state, PersonState.Idle);
             }
-          } else if (person.state === PersonState.Walking) {
+          } else if (person.state === PersonState.Walking || person.state === PersonState.Start_Walking) {
             const currTile = person.currTile;
             // Found special tile (door)
-            if (this._gridManagerService.getTileValue(currTile[0], currTile[1], 2) === 1) {
+            if (this._gridManagerService.getTileValue(currTile[0], currTile[1], 2) === 1 && person.state !== PersonState.Start_Walking) {
               this._changeState(person, person.state, PersonState.Idle); // TODO: Deciding
               this._changePersonDirection(index, this._gridManagerService.getTileValue(currTile[0], currTile[1], 3));
               person.canvas.style.transform = 'rotate(' + person.currRotation + 'deg)';
             } else {
-              const dir = person.currDirection === PersonDirection.Left ? -1 : 1; // Left | Right
-              const nextMove = [currTile[0], currTile[1] + dir];
-              const backMove = [currTile[0], currTile[1] - dir];
+              const cTile = person.currTile;
+              const dir = fourSidesMods.find(mods => this._gridManagerService.isInBounds(cTile[0] + mods[0], cTile[1] + mods[1]) && this._gridManagerService.getTileValue(cTile[0] + mods[0], cTile[1] + mods[1], 0) === TileValues.Sidewalk);
+              const nextMove = [currTile[0] + dir[0], currTile[1] + dir[1]];
               // Move forward
-              if (this._gridManagerService.isInBounds(nextMove[0], nextMove[1]) && !this._gridManagerService.isBlocking(nextMove[0], nextMove[1])) {
+              if (!this._gridManagerService.isBlocking(nextMove[0], nextMove[1])) {
                 const path = this._getShortestPath(person.currTile[0], person.currTile[1], nextMove[0], nextMove[1]);
                 if (path.length > 1) {
                   person.path = path;
                   person.isMoving = true;
-                }
-              // Blocked, go backward
-              } else if (this._gridManagerService.isInBounds(backMove[0], backMove[1]) && !this._gridManagerService.isBlocking(backMove[0], backMove[1])) {
-                const path = this._getShortestPath(person.currTile[0], person.currTile[1], backMove[0], backMove[1]);
-                if (path.length > 1) {
-                  person.path = path;
-                  person.isMoving = true;
                   this._changePersonDirection(index, this._calculatePersonsNewDirection(person));
+                  this._changeState(person, person.state, PersonState.Walking);
                 }
               // Blocked
               } else {
@@ -440,11 +438,11 @@ export class PeopleComponent implements OnInit {
     const currIndex = person.animationCounter;
     // Middle Posture
     if (currIndex < 10 || (currIndex > 19 && currIndex < 30)) {
-      imageLocation = imageLocations[0];
+      imageLocation = person.currDirection < PersonDirection.Up ? imageLocations[0] : imageLocations[3];
     } else if (currIndex > 29) {
-      imageLocation = imageLocations[2];
+      imageLocation = person.currDirection < PersonDirection.Up ? imageLocations[2] : imageLocations[5];
     } else {
-      imageLocation = imageLocations[1];
+      imageLocation = person.currDirection < PersonDirection.Up ? imageLocations[1] : imageLocations[4];
     }
     person.canvas.style.transform = 'rotate(' + person.currRotation + 'deg)';
     person.canvas.style.left = person.position[0] + 'px';
@@ -539,7 +537,7 @@ export class PeopleComponent implements OnInit {
    * @param newState person's new state.
    */
   private _changeState(person: Person, oldState: PersonState, newState: PersonState): void {
-    console.log('_changeState', person.name, PersonState[oldState], PersonState[newState]);
+    console.log('_changeState', person, PersonState[oldState], PersonState[newState]);
     person.state = newState;
   }
 
@@ -620,6 +618,74 @@ export class PeopleComponent implements OnInit {
    */
   private _convertRowColToCell(row: number, col: number): number {
     return (row * 100) + col;
+  }
+
+  /**
+   * Finds a sidewalk tile across the street.
+   * @param person person trying to cross the street.
+   * @returns tile coordinates belonging to sidewalk tile across the street from person.
+   */
+  private _crossStreetModifier(person: Person): [number, number] {
+    const currTileRow = person.currTile[0];
+    const currTileCol = person.currTile[1];
+    let found = 0;
+    // Check down
+    for (let a = 1; a < 5; a++) {
+      if (this._gridManagerService.isInBounds(currTileRow + a, currTileCol) && this._gridManagerService.getTileValue(currTileRow + a, currTileCol, 0) === TileValues.Street) {
+        found = a;
+      }
+    }
+    if (found) {
+      for (let a = found; a < found + 5; a++) {
+        if (this._gridManagerService.getTileValue(currTileRow + a, currTileCol, 0) === TileValues.Sidewalk) {
+          return [currTileRow + a, currTileCol];
+        }
+      }
+    }
+
+    // Check up
+    for (let b = 1; b < 5; b++) {
+      if (this._gridManagerService.isInBounds(currTileRow - b, currTileCol) && this._gridManagerService.getTileValue(currTileRow - b, currTileCol, 0) === TileValues.Street) {
+        found = b;
+      }
+    }
+    if (found) {
+      for (let b = found; b < found + 5; b++) {
+        if (this._gridManagerService.getTileValue(currTileRow - b, currTileCol, 0) === TileValues.Sidewalk) {
+          return [currTileRow - b, currTileCol];
+        }
+      }
+    }
+
+    // Check right
+    for (let c = 1; c < 5; c++) {
+      if (this._gridManagerService.isInBounds(currTileRow, currTileCol + c) && this._gridManagerService.getTileValue(currTileRow, currTileCol + c, 0) === TileValues.Street) {
+        found = c;
+      }
+    }
+    if (found) {
+      for (let c = found; c < found + 5; c++) {
+        if (this._gridManagerService.getTileValue(currTileRow, currTileCol + c, 0) === TileValues.Sidewalk) {
+          return [currTileRow, currTileCol + c];
+        }
+      }
+    }
+
+    // Check left
+    for (let d = 1; d < 5; d++) {
+      if (this._gridManagerService.isInBounds(currTileRow, currTileCol - d) && this._gridManagerService.getTileValue(currTileRow, currTileCol - d, 0) === TileValues.Street) {
+        found = d;
+      }
+    }
+    if (found) {
+      for (let d = found; d < found + 5; d++) {
+        if (this._gridManagerService.getTileValue(currTileRow, currTileCol - d, 0) === TileValues.Sidewalk) {
+          return [currTileRow, currTileCol - d];
+        }
+      }
+    }
+
+    return [0, 0];
   }
 
   /**
