@@ -27,7 +27,7 @@ export class PeopleComponent implements OnInit {
   private _people: Person[] = [
     {
       animationCounter: 0,
-      animationImageLocations: [[0, 0], [64, 0], [128, 0], [0, 64], [64, 64], [128, 64]],
+      animationImageLocations: [[0, 128], [64, 128], [128, 128], [0, 192], [64, 192], [128, 192]],
       canvas: null,
       ctx: null,
       currDirection: PersonDirection.Down,
@@ -43,7 +43,7 @@ export class PeopleComponent implements OnInit {
     },
     {
       animationCounter: 0,
-      animationImageLocations: [[192, 128], [256, 128], [320, 128], [192, 128], [256, 128], [320, 128]],
+      animationImageLocations: [[0, 0], [64, 0], [128, 0], [0, 64], [64, 64], [128, 64]],
       canvas: null,
       ctx: null,
       currDirection: PersonDirection.Right,
