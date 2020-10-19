@@ -32,7 +32,7 @@ export const CalculateDistance: (row1: number, col1: number, row2: number, col2:
     const yDist = Math.abs(row2 - row1);
     const yDistSqr = yDist * yDist;
     return Math.sqrt(xDistSqr + yDistSqr);
-}
+};
 
 /**
  * Based on the difference in row and column of current person tile and their next, this finds new person direction.
@@ -73,7 +73,7 @@ export const CalculatePersonsNewDirection: (person: Person) => PersonDirection =
             console.error('calculatePersonsNewDirection: Impossible dirrection key', dirCode, verticalDifference, horizontalDifference);
         }
     }
-}
+};
 
 /**
  * Calculates the next frame amount of movement the crew person must travel.
@@ -110,9 +110,7 @@ export const CalculatePersonNextMove: (person: Person, speed: number) => [number
             console.error('_calculatePersonNextMove: Impossible direction', person, person.currDirection);
         }
     }
-}
-
-
+};
 
 /**
  * Converts the single unique reference number for tile into row and col values.
@@ -121,7 +119,7 @@ export const CalculatePersonNextMove: (person: Person, speed: number) => [number
  */
 export const ConvertCellToRowCol: (cell: number) => [number, number] = (cell) => {
     return [Math.floor(cell / 100), (cell % 100)];
-}
+};
 
 /**
  * Converts the row and col values into a single unique number for reference.
@@ -131,4 +129,4 @@ export const ConvertCellToRowCol: (cell: number) => [number, number] = (cell) =>
  */
 export const ConvertRowColToCell: (row: number, col: number) => number = (row, col) => {
     return (row * 100) + col;
-}
+};

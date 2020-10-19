@@ -10,7 +10,8 @@ const FOUR_SIDES_MODS: [number, number][] = [ [1, 0], [0, 1], [-1, 0], [0, -1] ]
 })
 export class PersonManagerService {
 
-  constructor(private readonly _gridManagerService: GridManagerService,
+  constructor(
+    private readonly _gridManagerService: GridManagerService,
     private readonly _pathFinderService: PathFinderService) { }
 
   /**
@@ -36,7 +37,8 @@ export class PersonManagerService {
     let found = 0;
     // Check down
     for (let a = 1; a < 5; a++) {
-      if (this._gridManagerService.isInBounds(currTileRow + a, currTileCol) && this._gridManagerService.getTileValue(currTileRow + a, currTileCol, 0) === TileValues.Street) {
+      if (this._gridManagerService.isInBounds(currTileRow + a, currTileCol)
+        && this._gridManagerService.getTileValue(currTileRow + a, currTileCol, 0) === TileValues.Street) {
         found = a;
       }
     }
@@ -50,7 +52,8 @@ export class PersonManagerService {
 
     // Check up
     for (let b = 1; b < 5; b++) {
-      if (this._gridManagerService.isInBounds(currTileRow - b, currTileCol) && this._gridManagerService.getTileValue(currTileRow - b, currTileCol, 0) === TileValues.Street) {
+      if (this._gridManagerService.isInBounds(currTileRow - b, currTileCol)
+        && this._gridManagerService.getTileValue(currTileRow - b, currTileCol, 0) === TileValues.Street) {
         found = b;
       }
     }
@@ -64,7 +67,8 @@ export class PersonManagerService {
 
     // Check right
     for (let c = 1; c < 5; c++) {
-      if (this._gridManagerService.isInBounds(currTileRow, currTileCol + c) && this._gridManagerService.getTileValue(currTileRow, currTileCol + c, 0) === TileValues.Street) {
+      if (this._gridManagerService.isInBounds(currTileRow, currTileCol + c)
+        && this._gridManagerService.getTileValue(currTileRow, currTileCol + c, 0) === TileValues.Street) {
         found = c;
       }
     }
@@ -78,7 +82,8 @@ export class PersonManagerService {
 
     // Check left
     for (let d = 1; d < 5; d++) {
-      if (this._gridManagerService.isInBounds(currTileRow, currTileCol - d) && this._gridManagerService.getTileValue(currTileRow, currTileCol - d, 0) === TileValues.Street) {
+      if (this._gridManagerService.isInBounds(currTileRow, currTileCol - d)
+        && this._gridManagerService.getTileValue(currTileRow, currTileCol - d, 0) === TileValues.Street) {
         found = d;
       }
     }
@@ -113,7 +118,11 @@ export class PersonManagerService {
    */
   public decideInit(person: Person): void {
     // TODO: Have a better init algorith than just move right two squares.
-    person.path = this._pathFinderService.getShortestPath(person.currTile[0], person.currTile[1], person.currTile[0], person.currTile[1] + 2);
+    person.path = this._pathFinderService.getShortestPath(
+      person.currTile[0],
+      person.currTile[1],
+      person.currTile[0],
+      person.currTile[1] + 2);
     person.isMoving = true;
   }
 
@@ -129,8 +138,8 @@ export class PersonManagerService {
         this._changeState(person, person.state, PersonState.Walking);
         person.path.length = 1;
     } else if (person.state === PersonState.Walking && randomChance < 0.1) {
-      this._changeState(person, person.state, PersonState.Crossing_Street);
-      person.path.length = 1;
+      // this._changeState(person, person.state, PersonState.Crossing_Street);
+      // person.path.length = 1;
     } else if (person.state === PersonState.Crossing_Street && person.path.length === 1) {
       this._changeState(person, person.state, PersonState.Walking);
       person.path.length = 1;
@@ -183,7 +192,9 @@ export class PersonManagerService {
         person.canvas.style.transform = 'rotate(' + person.currRotation + 'deg)';
       } else {
         const cTile = person.currTile;
-        const dir = FOUR_SIDES_MODS.find(mods => this._gridManagerService.isInBounds(cTile[0] + mods[0], cTile[1] + mods[1]) && this._gridManagerService.getTileValue(cTile[0] + mods[0], cTile[1] + mods[1], 0) === TileValues.Sidewalk);
+        const dir = FOUR_SIDES_MODS.find(mods =>
+          this._gridManagerService.isInBounds(cTile[0] + mods[0], cTile[1] + mods[1])
+          && this._gridManagerService.getTileValue(cTile[0] + mods[0], cTile[1] + mods[1], 0) === TileValues.Sidewalk);
         const nextMove = [currTile[0] + dir[0], currTile[1] + dir[1]];
         // Move forward
         if (!this._gridManagerService.isBlocking(nextMove[0], nextMove[1])) {

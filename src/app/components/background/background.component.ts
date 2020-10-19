@@ -55,7 +55,7 @@ export class BackgroundComponent implements OnInit {
         128,
         64,
         64);
-      
+
       ctx.drawImage(
         this._bgMap.nativeElement,
         64,
@@ -77,7 +77,7 @@ export class BackgroundComponent implements OnInit {
         64,
         64,
         64);
-      
+
       ctx.drawImage(
         this._bgMap.nativeElement,
         64,
@@ -88,7 +88,7 @@ export class BackgroundComponent implements OnInit {
         384,
         64,
         64);
-      
+
       ctx.drawImage(
         this._cobble.nativeElement,
         0,
@@ -99,7 +99,7 @@ export class BackgroundComponent implements OnInit {
         192,
         64,
         64);
-      
+
       ctx.drawImage(
         this._cobble.nativeElement,
         0,

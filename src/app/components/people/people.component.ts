@@ -1,6 +1,6 @@
 import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Person, PersonDirection, PersonState } from 'src/app/models/person';
-import { GridManagerService, TileValues } from 'src/app/services/grid-manager.service';
+import { GridManagerService } from 'src/app/services/grid-manager.service';
 import { PersonManagerService } from 'src/app/services/person-manager.service';
 import { CalculatePersonNextMove, CalculatePersonsNewDirection, GetXPos, GetYPos, TURN_DEG } from 'src/app/utils/position-utils';
 
@@ -77,7 +77,8 @@ export class PeopleComponent implements OnInit {
 
   public canvasSize: [number, number] = [64, 64];
 
-  constructor(private readonly _elem: ElementRef,
+  constructor(
+    private readonly _elem: ElementRef,
     private readonly _gridManagerService: GridManagerService,
     private readonly _personManagerService: PersonManagerService) {}
 
