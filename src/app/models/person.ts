@@ -54,6 +54,11 @@ export interface Person {
     name: string;
 
     /**
+     * Flag to signal recalculate of position or rotation despite normal flow.
+     */
+    needsUpdate?: boolean;
+
+    /**
      * Row, Column tile position of the person.
      */
     position: [number, number];
@@ -75,20 +80,20 @@ export interface Person {
 }
 
 export enum PersonDirection {
-    'Down' = 0,
-    'Down_Left' = 1,
-    'Left' = 2,
-    'Right' = 3,
-    'Down_Right' = 4,
-    'Up' = 5,
-    'Up_Left' = 6,
-    'Up_Right' = 7,
+    'Down' = 1,
+    'Down_Left' = 2,
+    'Left' = 3,
+    'Right' = 4,
+    'Down_Right' = 5,
+    'Up' = 6,
+    'Up_Left' = 7,
+    'Up_Right' = 8,
 }
 
 export enum PersonState {
     'Crossing_Street' = 0,
-    'Idle' = 1,
-    'Start_Walking' = 2,
+    'Deciding' = 1,
+    'Idle' = 2,
     'Walking' = 3,
     'Wandering' = 4
 }

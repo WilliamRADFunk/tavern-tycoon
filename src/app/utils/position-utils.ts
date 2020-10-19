@@ -40,6 +40,9 @@ export const CalculateDistance: (row1: number, col1: number, row2: number, col2:
  * @returns the new direction the person should be facing.
  */
 export const CalculatePersonsNewDirection: (person: Person) => PersonDirection = (person) => {
+    if (person.path.length <= 1) {
+        return person.currDirection;
+    }
     const verticalDifference = person.path[1][0] - person.currTile[0];
     const horizontalDifference = person.path[1][1] - person.currTile[1];
     // vertical difference * 10 + horrizontal difference = unique number for each of 8 possible directions without all the if-elses.

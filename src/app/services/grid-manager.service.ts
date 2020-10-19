@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { PersonDirection } from '../models/person';
 
 export interface GridDictionaryValue {
   blocker?: boolean;
@@ -67,7 +68,7 @@ export class GridManagerService {
       this._grid[3][col][0] = TileValues.Street;
       this._grid[4][col][0] = TileValues.Street;
     }
-    this._grid[6][9][2] = 1;
+    this._grid[6][9][2] = PersonDirection.Down;
   }
 
   public getTileValue(row: number, col: number, vLayer: number): number {

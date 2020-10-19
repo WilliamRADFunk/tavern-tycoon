@@ -106,7 +106,7 @@ export class PersonManagerService {
     if (person.path[1] && !this._gridManagerService.isBlocking(person.path[1][0], person.path[1][1])) {
       person.isMoving = true;
     } else if (person.state === PersonState.Idle && Math.random() < 0.01) {
-      this._changeState(person, person.state, PersonState.Start_Walking);
+      this._changeState(person, person.state, PersonState.Walking);
       person.isMoving = true;
       person.path[0] = [person.currTile[0], person.currTile[1]];
     }
@@ -131,15 +131,21 @@ export class PersonManagerService {
    * @param person person who is deciding whether or not to change their state.
    */
   public decideMidstream(person: Person): void {
+    const currTile = person.currTile;
     const randomChance = Math.random();
-    if (person.state === PersonState.Wandering
-      && this._gridManagerService.getTileValue(person.currTile[0], person.currTile[1], 0) === TileValues.Sidewalk
+    if (person.state !== PersonState.Deciding && this._gridManagerService.getTileValue(currTile[0], currTile[1], 2)) {
+      this._changeState(person, person.state, PersonState.Deciding);
+      person.path.length = 1;
+      person.currDirection = this._gridManagerService.getTileValue(currTile[0], currTile[1], 2);
+      person.needsUpdate = true;
+    } else if (person.state === PersonState.Wandering
+      && this._gridManagerService.getTileValue(currTile[0], currTile[1], 0) === TileValues.Sidewalk
       && randomChance < 0.1) {
         this._changeState(person, person.state, PersonState.Walking);
         person.path.length = 1;
     } else if (person.state === PersonState.Walking && randomChance < 0.1) {
-      // this._changeState(person, person.state, PersonState.Crossing_Street);
-      // person.path.length = 1;
+      this._changeState(person, person.state, PersonState.Crossing_Street);
+      person.path.length = 1;
     } else if (person.state === PersonState.Crossing_Street && person.path.length === 1) {
       this._changeState(person, person.state, PersonState.Walking);
       person.path.length = 1;
@@ -183,13 +189,14 @@ export class PersonManagerService {
       if (!person.isMoving) {
         this._changeState(person, person.state, PersonState.Idle);
       }
-    } else if (person.state === PersonState.Walking || person.state === PersonState.Start_Walking) {
+    } else if (person.state === PersonState.Walking) {
       const currTile = person.currTile;
+      const specTile = this._gridManagerService.getTileValue(currTile[0], currTile[1], 2);
       // Found special tile (door)
-      if (this._gridManagerService.getTileValue(currTile[0], currTile[1], 2) === 1 && person.state !== PersonState.Start_Walking) {
-        this._changeState(person, person.state, PersonState.Idle); // TODO: Deciding
-        // this._changePersonDirection(person, this._gridManagerService.getTileValue(currTile[0], currTile[1], 3));
-        person.canvas.style.transform = 'rotate(' + person.currRotation + 'deg)';
+      if (specTile) {
+        this._changeState(person, person.state, PersonState.Deciding);
+        person.currDirection = specTile;
+        person.needsUpdate = true;
       } else {
         const cTile = person.currTile;
         const dir = FOUR_SIDES_MODS.find(mods =>

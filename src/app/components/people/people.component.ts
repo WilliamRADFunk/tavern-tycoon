@@ -25,12 +25,12 @@ export class PeopleComponent implements OnInit {
   private _animationId: number;
 
   private _people: Person[] = [
-    {
+    { // Noble
       animationCounter: 0,
       animationImageLocations: [[0, 128], [64, 128], [128, 128], [0, 192], [64, 192], [128, 192]],
       canvas: null,
       ctx: null,
-      currDirection: PersonDirection.Down,
+      currDirection: null,
       currTile: [1, 0],
       currRotation: 0,
       isMoving: false,
@@ -38,15 +38,15 @@ export class PeopleComponent implements OnInit {
       name: 'Bingo Bango',
       position: [GetXPos(0), GetYPos(1)],
       prevState: PersonState.Walking,
-      state: PersonState.Crossing_Street,
+      state: PersonState.Walking,
       tileValue: null
     },
-    {
+    { // Bartender
       animationCounter: 0,
       animationImageLocations: [[0, 0], [64, 0], [128, 0], [0, 64], [64, 64], [128, 64]],
       canvas: null,
       ctx: null,
-      currDirection: PersonDirection.Right,
+      currDirection: null,
       currTile: [6, 6],
       currRotation: 0,
       isMoving: false,
@@ -57,12 +57,12 @@ export class PeopleComponent implements OnInit {
       state: PersonState.Walking,
       tileValue: null
     },
-    {
+    { // Astronaut
       animationCounter: 0,
       animationImageLocations: [[0, 384], [64, 384], [128, 384], [0, 384], [64, 384], [128, 384]],
       canvas: null,
       ctx: null,
-      currDirection: PersonDirection.Up,
+      currDirection: null,
       currTile: [3, 9],
       currRotation: 0,
       isMoving: false,
@@ -158,7 +158,7 @@ export class PeopleComponent implements OnInit {
   private _animationCycle() {
     this._people
       .filter(person => !person.isMoving)
-      .forEach((person, index) => {
+      .forEach(person => {
         this._personManagerService.decideFromStandstill(person);
         this._changePersonDirection(person, CalculatePersonsNewDirection(person));
       });
@@ -203,9 +203,10 @@ export class PeopleComponent implements OnInit {
       });
 
     // Only redraw the people who are moving.
-    const movingPeople = this._people.filter(person => person.isMoving);
+    const movingPeople = this._people.filter(person => person.isMoving || person.needsUpdate);
     movingPeople.forEach(person => {
         this._animatePerson(person);
+        person.needsUpdate = false;
     });
 
     this._animationId = requestAnimationFrame(this._animationCycle.bind(this));
@@ -252,7 +253,7 @@ export class PeopleComponent implements OnInit {
    * @param newDir new direction to have person face.
    */
   private _changePersonDirection(person: Person, newDir: PersonDirection): void {
-    if (person.currDirection === newDir) {
+    if (person.currDirection === newDir && !person.needsUpdate) {
       return;
     }
     const oldRotation = person.currRotation;
