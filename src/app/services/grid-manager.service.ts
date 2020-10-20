@@ -21,17 +21,50 @@ export enum TileValues {
   'Unknown' = 0,
   'Sidewalk' = 1,
   'Median' = 2,
-  'Street' = 3
+  'Street' = 3,
+  'Door' = 4,
+  'Floor' = 5
 }
 
 const gridDictionary: GridDictionary = {
   100: {
-      blocker: false,
-      description: 'Lush green grass',
-      spritePosition: [1, 1],
-      hasVariation: false
-    },
+    description: 'Grassy median',
+    spritePosition: [64, 1792]
+  },
+  101: {
+    description: 'Sidewalk Horizontal (Top)',
+    spritePosition: [64, 1280]
+  },
+  102: {
+    description: 'Sidewalk Horizontal (Bottom)',
+    spritePosition: [64, 1408]
+  },
+  103: {
+    description: 'Sidewalk Vertical (Left)',
+    spritePosition: [1, 1]
+  },
+  104: {
+    description: 'Sidewalk Vertical (Right)',
+    spritePosition: [1, 1]
+  },
+  105: {
+    description: 'Street Cobblestone',
+    spritePosition: [0, 0]
+  },
+  106: {
+    description: 'Door',
+    spritePosition: [1, 1]
+  },
+  107: {
+    description: 'Floor Wooden',
+    spritePosition: [0, 0]
+  },
 };
+
+// 0: the tile graphic to use in the background.
+// 1: the type of tile (path-finding).
+// 2: whether tile is blocked.
+// 3: nature of tile (ie. in front of a door to enter).
 
 @Injectable({
   providedIn: 'root'
@@ -41,7 +74,7 @@ export class GridManagerService {
   private maxRows: number;
   private minCols: number = 0;
   private minRows: number = 0;
-  private readonly _grid: [TileValues, number, number, number][][] = [];
+  private readonly _grid: [number, TileValues, number, number, number][][] = [];
 
   constructor() { }
 
@@ -54,20 +87,36 @@ export class GridManagerService {
           this._grid[row] = [];
         }
         if (row >= 1 && row <= 6) {
-          this._grid[row][col] = [TileValues.Unknown, 0, 0, 0];
+          this._grid[row][col] = [null, TileValues.Unknown, 0, 0, 0];
         } else {
-          this._grid[row][col] = [TileValues.Unknown, 1, 0, 0];
+          this._grid[row][col] = [null, TileValues.Unknown, 1, 0, 0];
         }
       }
     }
     for (let col = 0; col < maxCols; col++) {
-      this._grid[1][col][0] = TileValues.Sidewalk;
-      this._grid[6][col][0] = TileValues.Sidewalk;
-      this._grid[2][col][0] = TileValues.Median;
-      this._grid[5][col][0] = TileValues.Median;
-      this._grid[3][col][0] = TileValues.Street;
-      this._grid[4][col][0] = TileValues.Street;
+      this._grid[1][col][0] = 101;
+      this._grid[1][col][1] = TileValues.Sidewalk;
+      this._grid[6][col][0] = 102;
+      this._grid[6][col][1] = TileValues.Sidewalk;
+      this._grid[2][col][0] = 100;
+      this._grid[2][col][1] = TileValues.Median;
+      this._grid[5][col][0] = 100;
+      this._grid[5][col][1] = TileValues.Median;
+      this._grid[3][col][0] = 105;
+      this._grid[3][col][1] = TileValues.Street;
+      this._grid[4][col][0] = 105;
+      this._grid[4][col][1] = TileValues.Street;
     }
+    for (let row = 8; row < 12; row++) {
+      for (let col = 5; col < 15; col++) {
+        this._grid[row][col][0] = 107;
+        this._grid[row][col][1] = TileValues.Floor;
+      }
+    }
+    this._grid[7][9][0] = 106;
+    this._grid[7][9][1] = TileValues.Door;
+
+    // Trigger Tile
     this._grid[6][9][2] = PersonDirection.Down;
   }
 

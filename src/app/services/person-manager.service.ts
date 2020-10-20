@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Person, PersonState } from '../models/person';
+import { GetEnterMods } from '../utils/position-utils';
 import { GridManagerService, TileValues } from './grid-manager.service';
 import { PathFinderService } from './path-finder.service';
 
@@ -103,7 +104,17 @@ export class PersonManagerService {
    * @param person person who is deciding whether or not to change their state.
    */
   public decideFromStandstill(person: Person): void {
-    if (person.path[1] && !this._gridManagerService.isBlocking(person.path[1][0], person.path[1][1])) {
+    if (person.state === PersonState.Deciding) {
+      // TODO: Calculate whether to enter or not.
+      this._changeState(person, person.state, PersonState.Entering);
+      const enterMods = GetEnterMods(person.currDirection);
+      person.path = this._pathFinderService.getShortestPath(
+        person.currTile[0],
+        person.currTile[1],
+        person.currTile[0] + enterMods[0],
+        person.currTile[1] + enterMods[1]);
+      person.isMoving = true;
+    } else if (person.path[1] && !this._gridManagerService.isBlocking(person.path[1][0], person.path[1][1])) {
       person.isMoving = true;
     } else if (person.state === PersonState.Idle && Math.random() < 0.01) {
       this._changeState(person, person.state, PersonState.Walking);
@@ -133,14 +144,18 @@ export class PersonManagerService {
   public decideMidstream(person: Person): void {
     const currTile = person.currTile;
     const randomChance = Math.random();
-    if (person.state !== PersonState.Deciding && this._gridManagerService.getTileValue(currTile[0], currTile[1], 2)) {
+    if (person.prevState !== PersonState.Deciding
+      && person.state !== PersonState.Deciding
+      && this._gridManagerService.getTileValue(currTile[0], currTile[1], 2)
+    ) {
       this._changeState(person, person.state, PersonState.Deciding);
       person.path.length = 1;
       person.currDirection = this._gridManagerService.getTileValue(currTile[0], currTile[1], 2);
       person.needsUpdate = true;
     } else if (person.state === PersonState.Wandering
       && this._gridManagerService.getTileValue(currTile[0], currTile[1], 0) === TileValues.Sidewalk
-      && randomChance < 0.1) {
+      && randomChance < 0.1
+    ) {
         this._changeState(person, person.state, PersonState.Walking);
         person.path.length = 1;
     } else if (person.state === PersonState.Walking && randomChance < 0.1) {
@@ -157,6 +172,10 @@ export class PersonManagerService {
    * @param person person who is deciding whether or not to change their state.
    */
   public decideNext(person: Person): void {
+    if (person.state === PersonState.Entering) {
+      this._changeState(person, person.state, PersonState.Wandering);
+    }
+    
     if (person.state === PersonState.Crossing_Street) {
       const nextMove = this._crossStreetModifier(person);
       const path = this._pathFinderService.getShortestPath(person.currTile[0], person.currTile[1], nextMove[0], nextMove[1]);

@@ -35,6 +35,43 @@ export const CalculateDistance: (row1: number, col1: number, row2: number, col2:
 };
 
 /**
+* Based on the direction, calculates direction mods for next move.
+* @param direction from which mods are calculated
+* @returns the direction mods the person should be heading toward.
+*/
+export const CalculatePersonsDirectionMods: (direction: PersonDirection) => [number, number] = (direction) => {
+    switch (direction) {
+        case PersonDirection.Down: {
+            return [1, 0];
+        }
+        case PersonDirection.Down_Right: {
+            return [1, 1];
+        }
+        case PersonDirection.Right: {
+            return [0, 1];
+        }
+        case PersonDirection.Up_Right: {
+            return [-1, 1];
+        }
+        case PersonDirection.Up: {
+            return [-1, 0];
+        }
+        case PersonDirection.Up_Left: {
+            return [-1, -1];
+        }
+        case PersonDirection.Left: {
+            return [0, -1];
+        }
+        case PersonDirection.Down_Left: {
+            return [1, -1];
+        }
+        default: {
+            console.error('CalculatePersonsDirectionMods: Impossible dirrection key', direction);
+        }
+    }
+};
+
+/**
  * Based on the difference in row and column of current person tile and their next, this finds new person direction.
  * @param Person whose new direction is to be calculated.
  * @returns the new direction the person should be facing.
@@ -132,4 +169,16 @@ export const ConvertCellToRowCol: (cell: number) => [number, number] = (cell) =>
  */
 export const ConvertRowColToCell: (row: number, col: number) => number = (row, col) => {
     return (row * 100) + col;
+};
+
+/**
+ * Gets the mods of final tile for entering.
+ * @param direction from which mods are calculated.
+ * @returns row/col mods for final tile for entering.
+ */
+export const GetEnterMods: (direction: PersonDirection) => [number, number] = (direction) => {
+    const dirMods = CalculatePersonsDirectionMods(direction);
+    dirMods[0] *= 2;
+    dirMods[1] *= 2;
+    return dirMods;
 };

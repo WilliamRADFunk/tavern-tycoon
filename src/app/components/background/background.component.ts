@@ -1,5 +1,5 @@
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
-import { GridManagerService } from 'src/app/services/grid-manager.service';
+import { GridManagerService, TileValues } from 'src/app/services/grid-manager.service';
 
 let imageLoadCount = 0;
 
@@ -44,73 +44,112 @@ export class BackgroundComponent implements OnInit {
       return;
     }
     const ctx = this._canvas.nativeElement.getContext('2d');
-    for (let col = 0; col < this.columns; col++) {
-      ctx.drawImage(
-        this._bgMap.nativeElement,
-        64,
-        1792,
-        64,
-        64,
-        (col * 64),
-        128,
-        64,
-        64);
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.columns; col++) {
+        const tileVal = this._gridManagerService.getTileValue(row, col, 1);
+        const spriteVals = this._gridManagerService.getTileValue(row, col, 0);
+        if (tileVal === TileValues.Median) {
+          ctx.drawImage(
+            this._bgMap.nativeElement,
+            spriteVals[0],
+            spriteVals[1],
+            64,
+            64,
+            (col * 64),
+            (row * 64),
+            64,
+            64);
+        } else if (tileVal === TileValues.Sidewalk) {
+          ctx.drawImage(
+            this._bgMap.nativeElement,
+            64,
+            1408,
+            64,
+            64,
+            (col * 64),
+            (row * 64),
+            64,
+            64);
+        } else if (tileVal === TileValues.Street) {
+          ctx.drawImage(
+            this._cobble.nativeElement,
+            0,
+            0,
+            256,
+            256,
+            (col * 64),
+            (row * 64),
+            64,
+            64);
+        } else if (tileVal === TileValues.Floor) {
+          ctx.drawImage(
+            this._cobble.nativeElement,
+            0,
+            0,
+            256,
+            256,
+            (col * 64),
+            (row * 64),
+            64,
+            64);
+        }
+        
 
-      ctx.drawImage(
-        this._bgMap.nativeElement,
-        64,
-        1792,
-        64,
-        64,
-        (col * 64),
-        320,
-        64,
-        64);
+        // ctx.drawImage(
+        //   this._bgMap.nativeElement,
+        //   64,
+        //   1792,
+        //   64,
+        //   64,
+        //   (col * 64),
+        //   320,
+        //   64,
+        //   64);
 
-      ctx.drawImage(
-        this._bgMap.nativeElement,
-        64,
-        1280,
-        64,
-        64,
-        (col * 64),
-        64,
-        64,
-        64);
+        // ctx.drawImage(
+        //   this._bgMap.nativeElement,
+        //   64,
+        //   1280,
+        //   64,
+        //   64,
+        //   (col * 64),
+        //   64,
+        //   64,
+        //   64);
 
-      ctx.drawImage(
-        this._bgMap.nativeElement,
-        64,
-        1408,
-        64,
-        64,
-        (col * 64),
-        384,
-        64,
-        64);
+        // ctx.drawImage(
+        //   this._bgMap.nativeElement,
+        //   64,
+        //   1408,
+        //   64,
+        //   64,
+        //   (col * 64),
+        //   384,
+        //   64,
+        //   64);
 
-      ctx.drawImage(
-        this._cobble.nativeElement,
-        0,
-        0,
-        256,
-        256,
-        (col * 64),
-        192,
-        64,
-        64);
+        // ctx.drawImage(
+        //   this._cobble.nativeElement,
+        //   0,
+        //   0,
+        //   256,
+        //   256,
+        //   (col * 64),
+        //   192,
+        //   64,
+        //   64);
 
-      ctx.drawImage(
-        this._cobble.nativeElement,
-        0,
-        0,
-        256,
-        256,
-        (col * 64),
-        256,
-        64,
-        64);
+        // ctx.drawImage(
+        //   this._cobble.nativeElement,
+        //   0,
+        //   0,
+        //   256,
+        //   256,
+        //   (col * 64),
+        //   256,
+        //   64,
+        //   64);
+      }
     }
   }
-
 }

@@ -93,7 +93,8 @@ export enum PersonDirection {
 export enum PersonState {
     'Crossing_Street' = 0,
     'Deciding' = 1,
-    'Idle' = 2,
-    'Walking' = 3,
-    'Wandering' = 4
+    'Entering' = 2,
+    'Idle' = 3,
+    'Walking' = 4,
+    'Wandering' = 5
 }
