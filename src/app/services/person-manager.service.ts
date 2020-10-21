@@ -37,60 +37,60 @@ export class PersonManagerService {
     const currTileCol = person.currTile[1];
     let found = 0;
     // Check down
-    for (let a = 1; a < 5; a++) {
+    for (let a = 1; a < 5 && currTileRow + a <= 100; a++) { // TODO: maxRows
       if (this._gridManagerService.isInBounds(currTileRow + a, currTileCol)
-        && this._gridManagerService.getTileValue(currTileRow + a, currTileCol, 0) === TileValues.Street) {
+        && this._gridManagerService.getTileValue(currTileRow + a, currTileCol, 1) === TileValues.Street) {
         found = a;
       }
     }
     if (found) {
-      for (let a = found; a < found + 5; a++) {
-        if (this._gridManagerService.getTileValue(currTileRow + a, currTileCol, 0) === TileValues.Sidewalk) {
+      for (let a = found; a < found + 5 && currTileRow + a <= 100; a++) { // TODO: maxRows
+        if (this._gridManagerService.getTileValue(currTileRow + a, currTileCol, 1) === TileValues.Sidewalk) {
           return [currTileRow + a, currTileCol];
         }
       }
     }
 
     // Check up
-    for (let b = 1; b < 5; b++) {
+    for (let b = 1; b < 5 && currTileRow - b >= 0; b++) { // TODO: minRows
       if (this._gridManagerService.isInBounds(currTileRow - b, currTileCol)
-        && this._gridManagerService.getTileValue(currTileRow - b, currTileCol, 0) === TileValues.Street) {
+        && this._gridManagerService.getTileValue(currTileRow - b, currTileCol, 1) === TileValues.Street) {
         found = b;
       }
     }
     if (found) {
-      for (let b = found; b < found + 5; b++) {
-        if (this._gridManagerService.getTileValue(currTileRow - b, currTileCol, 0) === TileValues.Sidewalk) {
+      for (let b = found; b < found + 5 && currTileRow - b >= 0; b++) { // TODO: minRows
+        if (this._gridManagerService.getTileValue(currTileRow - b, currTileCol, 1) === TileValues.Sidewalk) {
           return [currTileRow - b, currTileCol];
         }
       }
     }
 
     // Check right
-    for (let c = 1; c < 5; c++) {
+    for (let c = 1; c < 5 && currTileCol + c <= 100; c++) { // TODO: maxCols
       if (this._gridManagerService.isInBounds(currTileRow, currTileCol + c)
-        && this._gridManagerService.getTileValue(currTileRow, currTileCol + c, 0) === TileValues.Street) {
+        && this._gridManagerService.getTileValue(currTileRow, currTileCol + c, 1) === TileValues.Street) {
         found = c;
       }
     }
     if (found) {
-      for (let c = found; c < found + 5; c++) {
-        if (this._gridManagerService.getTileValue(currTileRow, currTileCol + c, 0) === TileValues.Sidewalk) {
+      for (let c = found; c < found + 5 && currTileCol + c <= 100; c++) {
+        if (this._gridManagerService.getTileValue(currTileRow, currTileCol + c, 1) === TileValues.Sidewalk) {
           return [currTileRow, currTileCol + c];
         }
       }
     }
 
     // Check left
-    for (let d = 1; d < 5; d++) {
+    for (let d = 1; d < 5 && currTileCol - d >= 0; d++) { // TODO: minCols
       if (this._gridManagerService.isInBounds(currTileRow, currTileCol - d)
-        && this._gridManagerService.getTileValue(currTileRow, currTileCol - d, 0) === TileValues.Street) {
+        && this._gridManagerService.getTileValue(currTileRow, currTileCol - d, 1) === TileValues.Street) {
         found = d;
       }
     }
     if (found) {
-      for (let d = found; d < found + 5; d++) {
-        if (this._gridManagerService.getTileValue(currTileRow, currTileCol - d, 0) === TileValues.Sidewalk) {
+      for (let d = found; d < found + 5 && currTileCol - d >= 0; d++) { // TODO: minCols
+        if (this._gridManagerService.getTileValue(currTileRow, currTileCol - d, 1) === TileValues.Sidewalk) {
           return [currTileRow, currTileCol - d];
         }
       }
@@ -146,14 +146,14 @@ export class PersonManagerService {
     const randomChance = Math.random();
     if (person.prevState !== PersonState.Deciding
       && person.state !== PersonState.Deciding
-      && this._gridManagerService.getTileValue(currTile[0], currTile[1], 2)
+      && this._gridManagerService.getTileValue(currTile[0], currTile[1], 3)
     ) {
       this._changeState(person, person.state, PersonState.Deciding);
       person.path.length = 1;
-      person.currDirection = this._gridManagerService.getTileValue(currTile[0], currTile[1], 2);
+      person.currDirection = this._gridManagerService.getTileValue(currTile[0], currTile[1], 3);
       person.needsUpdate = true;
     } else if (person.state === PersonState.Wandering
-      && this._gridManagerService.getTileValue(currTile[0], currTile[1], 0) === TileValues.Sidewalk
+      && this._gridManagerService.getTileValue(currTile[0], currTile[1], 1) === TileValues.Sidewalk
       && randomChance < 0.1
     ) {
         this._changeState(person, person.state, PersonState.Walking);
@@ -176,7 +176,11 @@ export class PersonManagerService {
       this._changeState(person, person.state, PersonState.Wandering);
     }
     
-    if (person.state === PersonState.Crossing_Street) {
+    if (person.prevState === PersonState.Crossing_Street) {
+      this._changeState(person, person.state, PersonState.Walking);
+      this.decideNext(person);
+    } else if (person.state === PersonState.Crossing_Street) {
+      person.prevState = PersonState.Crossing_Street;
       const nextMove = this._crossStreetModifier(person);
       const path = this._pathFinderService.getShortestPath(person.currTile[0], person.currTile[1], nextMove[0], nextMove[1]);
 
@@ -210,7 +214,7 @@ export class PersonManagerService {
       }
     } else if (person.state === PersonState.Walking) {
       const currTile = person.currTile;
-      const specTile = this._gridManagerService.getTileValue(currTile[0], currTile[1], 2);
+      const specTile = this._gridManagerService.getTileValue(currTile[0], currTile[1], 3);
       // Found special tile (door)
       if (specTile) {
         this._changeState(person, person.state, PersonState.Deciding);
@@ -220,7 +224,7 @@ export class PersonManagerService {
         const cTile = person.currTile;
         const dir = FOUR_SIDES_MODS.find(mods =>
           this._gridManagerService.isInBounds(cTile[0] + mods[0], cTile[1] + mods[1])
-          && this._gridManagerService.getTileValue(cTile[0] + mods[0], cTile[1] + mods[1], 0) === TileValues.Sidewalk);
+          && this._gridManagerService.getTileValue(cTile[0] + mods[0], cTile[1] + mods[1], 1) === TileValues.Sidewalk);
         const nextMove = [currTile[0] + dir[0], currTile[1] + dir[1]];
         // Move forward
         if (!this._gridManagerService.isBlocking(nextMove[0], nextMove[1])) {

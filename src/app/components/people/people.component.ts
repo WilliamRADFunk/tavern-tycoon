@@ -57,9 +57,9 @@ export class PeopleComponent implements OnInit {
       state: PersonState.Walking,
       tileValue: null
     },
-    { // Astronaut
+    { // Old Man
       animationCounter: 0,
-      animationImageLocations: [[0, 384], [64, 384], [128, 384], [0, 384], [64, 384], [128, 384]],
+      animationImageLocations: [[0, 256], [64, 256], [128, 256], [0, 320], [64, 320], [128, 320]],
       canvas: null,
       ctx: null,
       currDirection: null,

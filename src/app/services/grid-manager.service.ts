@@ -26,7 +26,7 @@ export enum TileValues {
   'Floor' = 5
 }
 
-const gridDictionary: GridDictionary = {
+export const gridDictionary: GridDictionary = {
   100: {
     description: 'Grassy median',
     spritePosition: [64, 1792]
@@ -53,11 +53,11 @@ const gridDictionary: GridDictionary = {
   },
   106: {
     description: 'Door',
-    spritePosition: [1, 1]
+    spritePosition: [0, 1344]
   },
   107: {
     description: 'Floor Wooden',
-    spritePosition: [0, 0]
+    spritePosition: [64, 1344]
   },
 };
 
@@ -84,7 +84,7 @@ export class GridManagerService {
     for (let row = 0; row < maxRows; row++) {
       for (let col = 0; col < maxCols; col++) {
         if (!this._grid[row]) {
-          this._grid[row] = [];
+          this._grid[row] = [[null, TileValues.Unknown, 1, 0, 0]];
         }
         if (row >= 1 && row <= 6) {
           this._grid[row][col] = [null, TileValues.Unknown, 0, 0, 0];
@@ -117,10 +117,13 @@ export class GridManagerService {
     this._grid[7][9][1] = TileValues.Door;
 
     // Trigger Tile
-    this._grid[6][9][2] = PersonDirection.Down;
+    this._grid[6][9][3] = PersonDirection.Down;
   }
 
   public getTileValue(row: number, col: number, vLayer: number): number {
+    if (!this.isInBounds(row, col)) {
+      console.error('getTileValue', 'Out of bounds', row, col);
+    }
     return this._grid[row][col][vLayer];
   }
 
@@ -131,7 +134,7 @@ export class GridManagerService {
    * @returns TRUE if that tile is a blocking tile | FALSE if it is not blocking
    */
   public isBlocking(row: number, col: number): boolean {
-    return !!this._grid[row][col][1];
+    return !!this._grid[row][col][2];
   }
 
   /**
