@@ -84,11 +84,9 @@ export class GridManagerService {
     for (let row = 0; row < maxRows; row++) {
       for (let col = 0; col < maxCols; col++) {
         if (!this._grid[row]) {
-          this._grid[row] = [[null, TileValues.Unknown, 1, 0, 0]];
+          this._grid[row] = [];
         }
-        if (row >= 1 && row <= 6) {
-          this._grid[row][col] = [null, TileValues.Unknown, 0, 0, 0];
-        } else {
+        if (!this._grid[row][col]) {
           this._grid[row][col] = [null, TileValues.Unknown, 1, 0, 0];
         }
       }
@@ -96,25 +94,33 @@ export class GridManagerService {
     for (let col = 0; col < maxCols; col++) {
       this._grid[1][col][0] = 101;
       this._grid[1][col][1] = TileValues.Sidewalk;
+      this._grid[1][col][2] = 0;
       this._grid[6][col][0] = 102;
       this._grid[6][col][1] = TileValues.Sidewalk;
+      this._grid[6][col][2] = 0;
       this._grid[2][col][0] = 100;
       this._grid[2][col][1] = TileValues.Median;
+      this._grid[2][col][2] = 0;
       this._grid[5][col][0] = 100;
       this._grid[5][col][1] = TileValues.Median;
+      this._grid[5][col][2] = 0;
       this._grid[3][col][0] = 105;
       this._grid[3][col][1] = TileValues.Street;
+      this._grid[3][col][2] = 0;
       this._grid[4][col][0] = 105;
       this._grid[4][col][1] = TileValues.Street;
+      this._grid[4][col][2] = 0;
     }
     for (let row = 8; row < 12; row++) {
       for (let col = 5; col < 15; col++) {
         this._grid[row][col][0] = 107;
         this._grid[row][col][1] = TileValues.Floor;
+        this._grid[row][col][2] = 0;
       }
     }
     this._grid[7][9][0] = 106;
     this._grid[7][9][1] = TileValues.Door;
+    this._grid[7][9][2] = 1;
 
     // Trigger Tile
     this._grid[6][9][3] = PersonDirection.Down;

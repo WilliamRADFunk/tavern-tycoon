@@ -1,5 +1,5 @@
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
-import { gridDictionary, GridManagerService, TileValues } from 'src/app/services/grid-manager.service';
+import { gridDictionary, GridDictionaryValue, GridManagerService, TileValues } from 'src/app/services/grid-manager.service';
 
 let imageLoadCount = 0;
 
@@ -47,7 +47,7 @@ export class BackgroundComponent implements OnInit {
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.columns; col++) {
         const tileVal = this._gridManagerService.getTileValue(row, col, 1);
-        const spriteVals = (gridDictionary[this._gridManagerService.getTileValue(row, col, 0)] || {}).spritePosition;
+        const spriteVals = (gridDictionary[this._gridManagerService.getTileValue(row, col, 0)] || {} as GridDictionaryValue).spritePosition;
         if (tileVal && tileVal !== TileValues.Street) {
           ctx.drawImage(
             this._bgMap.nativeElement,

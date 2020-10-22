@@ -153,6 +153,20 @@ export const CalculatePersonNextMove: (person: Person, speed: number) => [number
 };
 
 /**
+ * Rotates the person in the desired direction.
+ * @param person person to have its direction altered.
+ * @param newDir new direction to have person face.
+ */
+export const ChangePersonDirection: (person: Person, newDir: PersonDirection) => void = (person, newDir) => {
+    if (person.currDirection === newDir && !person.needsUpdate) {
+        return;
+    }
+    const oldRotation = person.currRotation;
+    person.currDirection = newDir;
+    RotatePerson(oldRotation, person);
+}
+
+/**
  * Converts the single unique reference number for tile into row and col values.
  * @param cell reference number of the tile
  * @returns [row, col] values belonging to given reference number
@@ -182,3 +196,47 @@ export const GetEnterMods: (direction: PersonDirection) => [number, number] = (d
     dirMods[1] *= 2;
     return dirMods;
 };
+
+export const RotatePerson: (oldRotation: number, person: Person) => void = (oldRotation, person) => {
+    person.currRotation = -oldRotation;
+    let rotApplied = 0;
+    switch (person.currDirection) {
+        case PersonDirection.Down: {
+            rotApplied += 0;
+            break;
+        }
+        case PersonDirection.Down_Left: {
+            rotApplied += 0; // TURN_DEG.RAD_45_DEG_LEFT;
+            break;
+        }
+        case PersonDirection.Left: {
+            rotApplied += TURN_DEG.RAD_90_DEG_LEFT;
+            break;
+        }
+        case PersonDirection.Up_Left: {
+            rotApplied += 0; // TURN_DEG.RAD_135_DEG_LEFT;
+            break;
+        }
+        case PersonDirection.Up: {
+            rotApplied += 0; // TURN_DEG.RAD_180_DEG_LEFT;
+            break;
+        }
+        case PersonDirection.Up_Right: {
+            rotApplied += 0; // TURN_DEG.RAD_225_DEG_LEFT;
+            break;
+        }
+        case PersonDirection.Right: {
+            rotApplied += TURN_DEG.RAD_270_DEG_LEFT;
+            break;
+        }
+        case PersonDirection.Down_Right: {
+            rotApplied += 0; // TURN_DEG.RAD_315_DEG_LEFT;
+            break;
+        }
+        default: {
+            console.error('_rotatePerson', 'Received an invalid direction');
+        }
+    }
+
+    person.currRotation = rotApplied;
+}

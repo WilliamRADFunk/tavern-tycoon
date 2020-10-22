@@ -96,7 +96,7 @@ export class PersonManagerService {
       }
     }
 
-    return [0, 0];
+    return [currTileRow, currTileCol];
   }
 
   /**
@@ -174,12 +174,17 @@ export class PersonManagerService {
   public decideNext(person: Person): void {
     if (person.state === PersonState.Entering) {
       this._changeState(person, person.state, PersonState.Wandering);
+      this.decideNext(person);
+      return;
     }
     
     if (person.prevState === PersonState.Crossing_Street) {
       this._changeState(person, person.state, PersonState.Walking);
       this.decideNext(person);
-    } else if (person.state === PersonState.Crossing_Street) {
+      return;
+    }
+    
+    if (person.state === PersonState.Crossing_Street) {
       person.prevState = PersonState.Crossing_Street;
       const nextMove = this._crossStreetModifier(person);
       const path = this._pathFinderService.getShortestPath(person.currTile[0], person.currTile[1], nextMove[0], nextMove[1]);
@@ -201,6 +206,10 @@ export class PersonManagerService {
         const col = person.currTile[1] + (colScalar * colMag);
         const row = person.currTile[0] + (rowScalar * rowMag);
         if (this._gridManagerService.isInBounds(row, col) && !this._gridManagerService.isBlocking(row, col)) {
+          const tileVal = this._gridManagerService.getTileValue(row, col, 1);
+          if (tileVal !== TileValues.Floor) {
+            continue;
+          }
           const path = this._pathFinderService.getShortestPath(person.currTile[0], person.currTile[1], row, col);
           if (path.length > 1) {
             person.path = path;

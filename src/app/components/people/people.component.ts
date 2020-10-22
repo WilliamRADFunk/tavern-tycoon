@@ -2,7 +2,7 @@ import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild } from '@ang
 import { Person, PersonDirection, PersonState } from 'src/app/models/person';
 import { GridManagerService } from 'src/app/services/grid-manager.service';
 import { PersonManagerService } from 'src/app/services/person-manager.service';
-import { CalculatePersonNextMove, CalculatePersonsNewDirection, GetXPos, GetYPos, TURN_DEG } from 'src/app/utils/position-utils';
+import { CalculatePersonNextMove, CalculatePersonsNewDirection, ChangePersonDirection, GetXPos, GetYPos, TURN_DEG } from 'src/app/utils/position-utils';
 
 const PERSON_ACTUAL_SIZE = 36;
 const PERSON_IMG_SIZE = 64;
@@ -63,12 +63,12 @@ export class PeopleComponent implements OnInit {
       canvas: null,
       ctx: null,
       currDirection: null,
-      currTile: [3, 9],
+      currTile: [8, 10],
       currRotation: 0,
       isMoving: false,
       path: [],
       name: 'Jack Diggler',
-      position: [GetXPos(9), GetYPos(3)],
+      position: [GetXPos(10), GetYPos(8)],
       prevState: PersonState.Wandering,
       state: PersonState.Wandering,
       tileValue: null
@@ -103,7 +103,7 @@ export class PeopleComponent implements OnInit {
         person.ctx = (person.canvas as HTMLCanvasElement).getContext('2d');
         person.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
         this._personManagerService.decideInit(person);
-        this._changePersonDirection(person, CalculatePersonsNewDirection(person));
+        ChangePersonDirection(person, CalculatePersonsNewDirection(person));
         // Update the tile value.
         this._updateCrewInGrid(person.currTile[0], person.currTile[1], index);
       });
@@ -111,56 +111,12 @@ export class PeopleComponent implements OnInit {
     this._patrons.nativeElement.onload = this._animationCycle.bind(this);
   }
 
-  private _rotatePerson(oldRotation: number, person: Person): void {
-    person.currRotation = -oldRotation;
-    let rotApplied = 0;
-    switch (person.currDirection) {
-      case PersonDirection.Down: {
-        rotApplied += 0;
-        break;
-      }
-      case PersonDirection.Down_Left: {
-        rotApplied += 0; // TURN_DEG.RAD_45_DEG_LEFT;
-        break;
-      }
-      case PersonDirection.Left: {
-        rotApplied += TURN_DEG.RAD_90_DEG_LEFT;
-        break;
-      }
-      case PersonDirection.Up_Left: {
-        rotApplied += 0; // TURN_DEG.RAD_135_DEG_LEFT;
-        break;
-      }
-      case PersonDirection.Up: {
-        rotApplied += 0; // TURN_DEG.RAD_180_DEG_LEFT;
-        break;
-      }
-      case PersonDirection.Up_Right: {
-        rotApplied += 0; // TURN_DEG.RAD_225_DEG_LEFT;
-        break;
-      }
-      case PersonDirection.Right: {
-        rotApplied += TURN_DEG.RAD_270_DEG_LEFT;
-        break;
-      }
-      case PersonDirection.Down_Right: {
-        rotApplied += 0; // TURN_DEG.RAD_315_DEG_LEFT;
-        break;
-      }
-      default: {
-        console.error('_rotatePerson', 'Received an invalid direction');
-      }
-    }
-
-    person.currRotation = rotApplied;
-  }
-
   private _animationCycle() {
     this._people
       .filter(person => !person.isMoving)
       .forEach(person => {
         this._personManagerService.decideFromStandstill(person);
-        this._changePersonDirection(person, CalculatePersonsNewDirection(person));
+        ChangePersonDirection(person, CalculatePersonsNewDirection(person));
       });
     this._people
       .filter(person => person.isMoving)
@@ -177,7 +133,7 @@ export class PeopleComponent implements OnInit {
 
           // Decide to change destination, or keep going.
           this._personManagerService.decideMidstream(person);
-          this._changePersonDirection(person, CalculatePersonsNewDirection(person));
+          ChangePersonDirection(person, CalculatePersonsNewDirection(person));
         // Still in between tiles, move a little closer to next tile.
         } else {
           const nextMove = CalculatePersonNextMove(person, WALKING_SPEED);
@@ -197,7 +153,7 @@ export class PeopleComponent implements OnInit {
 
           // Decide what to do next.
           this._personManagerService.decideNext(person);
-          this._changePersonDirection(person, CalculatePersonsNewDirection(person));
+          ChangePersonDirection(person, CalculatePersonsNewDirection(person));
           return;
         }
       });
@@ -245,20 +201,6 @@ export class PeopleComponent implements OnInit {
     if (person.animationCounter > 39) {
         person.animationCounter = 0;
     }
-  }
-
-  /**
-   * Rotates the person in the desired direction.
-   * @param person person to have its direction altered.
-   * @param newDir new direction to have person face.
-   */
-  private _changePersonDirection(person: Person, newDir: PersonDirection): void {
-    if (person.currDirection === newDir && !person.needsUpdate) {
-      return;
-    }
-    const oldRotation = person.currRotation;
-    person.currDirection = newDir;
-    this._rotatePerson(oldRotation, person);
   }
 
   /**
