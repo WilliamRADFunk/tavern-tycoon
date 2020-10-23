@@ -95,21 +95,26 @@ export class GridManagerService {
       this._grid[1][col][0] = 101;
       this._grid[1][col][1] = TileValues.Sidewalk;
       this._grid[1][col][2] = 0;
-      this._grid[6][col][0] = 102;
-      this._grid[6][col][1] = TileValues.Sidewalk;
-      this._grid[6][col][2] = 0;
+
       this._grid[2][col][0] = 100;
       this._grid[2][col][1] = TileValues.Median;
       this._grid[2][col][2] = 0;
-      this._grid[5][col][0] = 100;
-      this._grid[5][col][1] = TileValues.Median;
-      this._grid[5][col][2] = 0;
+
       this._grid[3][col][0] = 105;
       this._grid[3][col][1] = TileValues.Street;
       this._grid[3][col][2] = 0;
+
       this._grid[4][col][0] = 105;
       this._grid[4][col][1] = TileValues.Street;
       this._grid[4][col][2] = 0;
+
+      this._grid[5][col][0] = 100;
+      this._grid[5][col][1] = TileValues.Median;
+      this._grid[5][col][2] = 0;
+
+      this._grid[6][col][0] = 102;
+      this._grid[6][col][1] = TileValues.Sidewalk;
+      this._grid[6][col][2] = 0;
     }
     for (let row = 8; row < 12; row++) {
       for (let col = 5; col < 15; col++) {

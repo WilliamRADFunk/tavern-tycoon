@@ -1,6 +1,6 @@
 <div *ngIf="devMode" class="bg-transparent">
     <div *ngFor="let row of rowset; let iRow = index" class="row-grid d-block" [ngStyle]="{ 'min-width': (columns * 64) + 'px' }">
-        <div *ngFor="let cols of colset; let iCol = index" class="col-grid d-inline-block text-center" style="position: relative;">
+        <div *ngFor="let cols of colset; let iCol = index" class="col-grid d-inline-block text-center text-white" style="position: relative;">
             {{iRow}}-{{iCol}}<br>
             {{getTileValue(iRow, iCol)}}
         </div>
