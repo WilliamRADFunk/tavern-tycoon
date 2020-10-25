@@ -48,7 +48,7 @@ export class BackgroundComponent implements OnInit {
       for (let col = 0; col < this.columns; col++) {
         const tileVal = this._gridManagerService.getTileValue(row, col, 1);
         const spriteVals = (gridDictionary[this._gridManagerService.getTileValue(row, col, 0)] || {} as GridDictionaryValue).spritePosition;
-        if (tileVal && tileVal !== TileValues.Street) {
+        if (tileVal !== TileValues.Street) {
           ctx.drawImage(
             this._bgMap.nativeElement,
             spriteVals[0],

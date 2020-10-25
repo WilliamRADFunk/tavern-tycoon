@@ -27,6 +27,10 @@ export enum TileValues {
 }
 
 export const gridDictionary: GridDictionary = {
+  99: {
+    description: 'Other',
+    spritePosition: [256, 960]
+  },
   100: {
     description: 'Grassy median',
     spritePosition: [64, 1792]
@@ -87,7 +91,7 @@ export class GridManagerService {
           this._grid[row] = [];
         }
         if (!this._grid[row][col]) {
-          this._grid[row][col] = [null, TileValues.Unknown, 1, 0, 0];
+          this._grid[row][col] = [99, TileValues.Unknown, 1, 0, 0];
         }
       }
     }
@@ -125,7 +129,7 @@ export class GridManagerService {
     }
     this._grid[7][9][0] = 106;
     this._grid[7][9][1] = TileValues.Door;
-    this._grid[7][9][2] = 1;
+    this._grid[7][9][2] = 0;
 
     // Trigger Tile
     this._grid[6][9][3] = PersonDirection.Down;
